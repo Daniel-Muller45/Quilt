@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3409ABC82EAC42F20077149A /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 3409ABC62EAC42E30077149A /* .gitignore */; };
 		34CCC4F82EAB0CCE008888D9 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4F72EAB0CCE008888D9 /* Supabase */; };
 		34CCC4FA2EAB0CD5008888D9 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4F92EAB0CD5008888D9 /* Auth */; };
 		34CCC4FC2EAB0CD5008888D9 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4FB2EAB0CD5008888D9 /* Functions */; };
@@ -16,6 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3409ABC62EAC42E30077149A /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		34CCC4CC2EAB0AE2008888D9 /* Quilt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quilt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -60,6 +62,7 @@
 		34CCC4C32EAB0AE2008888D9 = {
 			isa = PBXGroup;
 			children = (
+				3409ABC62EAC42E30077149A /* .gitignore */,
 				34CCC4CE2EAB0AE2008888D9 /* Quilt */,
 				34CCC4CD2EAB0AE2008888D9 /* Products */,
 			);
@@ -146,6 +149,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3409ABC82EAC42F20077149A /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
