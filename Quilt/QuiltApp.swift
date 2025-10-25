@@ -1,19 +1,21 @@
-//
-//  QuiltApp.swift
-//  Quilt
-//
-//  Created by Daniel Muller on 10/23/25.
-//
-
 import SwiftUI
 
 @main
 struct QuiltApp: App {
+    @StateObject private var authViewModel = AuthViewModel()
+
     var body: some Scene {
         WindowGroup {
-            LoginView()
+            if authViewModel.isLoading {
+                LoadingView()
+                    .preferredColorScheme(.dark)
+            } else {
+                ProtectedView {
+                    MainTabView()
+                }
+                .environmentObject(authViewModel)
                 .preferredColorScheme(.dark)
+            }
         }
     }
 }
-

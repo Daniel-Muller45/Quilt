@@ -1,10 +1,3 @@
-//
-//  Stock.swift
-//  Quilt
-//
-//  Created by Daniel Muller on 10/23/25.
-//
-
 import Foundation
 
 struct Stock: Identifiable, Codable {

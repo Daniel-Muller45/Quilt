@@ -1,0 +1,9 @@
+# Xcode & Swift
+DerivedData/
+*.xcuserstate
+*.xcuserdata
+*.DS_Store
+
+# Secrets
+Config.plist
+

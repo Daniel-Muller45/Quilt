@@ -2,6 +2,7 @@ import SwiftUI
 import Supabase
 
 struct LoginView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
     @State private var email = ""
     @State private var password = ""
     @State private var message = ""
@@ -43,7 +44,7 @@ struct LoginView: View {
                     .multilineTextAlignment(.center)
                 
                 NavigationLink("Don't have an account? Sign Up") {
-                                    SignupView()
+                    SignupView()
                 }
                 .padding(.top, 10)
             }
@@ -55,7 +56,7 @@ struct LoginView: View {
         isLoading = true
         message = ""
         do {
-            try await SupabaseService.shared.client.auth.signIn(
+            try await authViewModel.signIn(
                 email: email,
                 password: password
             )
