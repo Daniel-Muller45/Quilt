@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct NewsView: View {
-    @State private var articles: [NewsArticle] = [] // your model
+    @State private var articles: [NewsArticle] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
 
@@ -44,8 +44,7 @@ struct NewsView: View {
         defer { isLoading = false }
 
         do {
-            // Replace this with your actual API call / Supabase fetch
-            try await Task.sleep(nanoseconds: 1_000_000_000) // simulate delay
+            try await Task.sleep(nanoseconds: 1_000_000_000)
             self.articles = [
                 NewsArticle(title: "Apple Q4 Earnings Beat Expectations",
                             source: "Reuters",

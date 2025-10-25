@@ -1,49 +1,89 @@
+import Foundation
 import Supabase
 import SwiftUI
-import Combine
 
 @MainActor
 class AuthViewModel: ObservableObject {
     @Published var session: Session?
     @Published var isLoading = true
-    @Published var errorMessage: String?
+    @Published var biometricsEnabled = false
+    @Published var isLocked = true
 
-    private let client = SupabaseService.shared.client
+    private let service = SupabaseService.shared
+    private let keychain = KeychainService.shared
 
     init() {
-        Task {
-            await loadSession()
-        }
+        Task { await loadSession() }
     }
 
     func loadSession() async {
-        do {
-            let current = try await client.auth.session
-            self.session = current
-        } catch {
-            self.session = nil
+        self.session = try? await service.getSession()
+        self.isLoading = false
+        self.biometricsEnabled = BiometricService.shared.isBiometricsAvailable() &&
+                                 keychain.read(service: "Quilt", account: "email") != nil
+    }
+
+    func signIn(email: String, password: String, remember: Bool = true) async throws {
+        let session = try await service.signIn(email: email, password: password)
+        self.session = session
+
+        if remember {
+            keychain.save(email, service: "Quilt", account: "email")
+            keychain.save(password, service: "Quilt", account: "password")
         }
-        isLoading = false
     }
     
-    func signIn(email: String, password: String) async throws {
-        try await client.auth.signIn(email: email, password: password)
-
-        do {
-            let current = try await client.auth.session
-            self.session = current
-        } catch {
-            self.session = nil
-            throw error
-        }
+    func signUp(email: String, password: String) async throws {
+        let response = try await service.signUp(email: email, password: password)
+        self.session = response.session
     }
+
 
     func signOut() async {
-        do {
-            try await client.auth.signOut()
-        } catch {
-            print("Sign out error:", error)
-        }
-        self.session = nil
+        try? await service.signOut()
+        session = nil
     }
+
+    func biometricLogin() async {
+        guard BiometricService.shared.isBiometricsAvailable() else {
+            return
+        }
+
+        do {
+            let success = try await BiometricService.shared.authenticate()
+
+            if success {
+                let email = keychain.read(service: "Quilt", account: "email")
+                let password = keychain.read(service: "Quilt", account: "password")
+
+                if let email, let password {
+                    try await signIn(email: email, password: password, remember: true)
+                    print("Signed in with stored credentials")
+
+                    biometricsEnabled = BiometricService.shared.isBiometricsAvailable() &&
+                                        keychain.read(service: "Quilt", account: "email") != nil
+                } else {
+                    print("No stored credentials found in Keychain")
+                }
+            }
+        } catch {
+            print("Biometric login failed:", error.localizedDescription)
+        }
+    }
+
+    func lockApp() {
+        isLocked = true
+    }
+    
+    func unlockApp() async {
+        guard BiometricService.shared.isBiometricsAvailable() else { return }
+        do {
+            let success = try await BiometricService.shared.authenticate(reason: "Unlock Quilt")
+            if success { isLocked = false }
+        } catch {
+            print("Face ID failed: ", error.localizedDescription)
+            isLocked = true
+        }
+    }
+
 }
