@@ -78,7 +78,6 @@ struct SignupView: View {
 
             if response.user != nil {
                 message = "Account created! Please check your email to verify."
-                // Optionally: auto-dismiss or navigate to login after a delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     dismiss()
                 }

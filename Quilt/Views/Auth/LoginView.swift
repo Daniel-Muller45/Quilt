@@ -23,9 +23,7 @@ struct LoginView: View {
                     .textFieldStyle(.roundedBorder)
 
                 Button {
-                    Task {
-                        await signIn()
-                    }
+                    Task { await signIn() }
                 } label: {
                     if isLoading {
                         ProgressView()
@@ -33,8 +31,20 @@ struct LoginView: View {
                         Text("Sign In")
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color("PrimaryColor"))
+                            .background(Color.blue)
                             .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
+                }
+
+                if authViewModel.biometricsEnabled {
+                    Button {
+                        Task { await authViewModel.biometricLogin() }
+                    } label: {
+                        Label("Sign in with Face ID", systemImage: "faceid")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(.secondarySystemBackground))
                             .cornerRadius(8)
                     }
                 }
@@ -42,24 +52,21 @@ struct LoginView: View {
                 Text(message)
                     .foregroundColor(.red)
                     .multilineTextAlignment(.center)
-                
+
                 NavigationLink("Don't have an account? Sign Up") {
                     SignupView()
                 }
                 .padding(.top, 10)
             }
+            .padding()
         }
-        .padding()
     }
 
     func signIn() async {
         isLoading = true
         message = ""
         do {
-            try await authViewModel.signIn(
-                email: email,
-                password: password
-            )
+            try await authViewModel.signIn(email: email, password: password)
             message = "Signed in successfully!"
         } catch {
             message = "Error: \(error.localizedDescription)"

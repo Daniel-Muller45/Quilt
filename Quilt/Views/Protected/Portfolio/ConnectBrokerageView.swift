@@ -11,7 +11,6 @@ struct ConnectBrokerageView: View {
                     .bold()
 
                 Button("Connect Robinhood") {
-                    // Handle brokerage linking here
                     dismiss()
                 }
                 

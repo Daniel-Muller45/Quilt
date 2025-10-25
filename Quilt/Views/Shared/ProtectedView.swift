@@ -9,12 +9,13 @@ struct ProtectedView<Content: View>: View {
     }
 
     var body: some View {
-        Group {
-            if let _ = auth.session {
-                content()
-            } else {
-                LoginView()
+            Group {
+                if auth.session != nil {
+                    content()
+                } else {
+                    LoginView()
+                        .environmentObject(auth)
+                }
             }
         }
-    }
 }

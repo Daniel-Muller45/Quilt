@@ -16,14 +16,14 @@ struct PortfolioView: View {
         Account(name: "META", balance: 19800.00)
     ]
 
-    @State private var showingConnectBrokerage = false // controls the sheet
+    @State private var showingConnectBrokerage = false
+    @State private var signOutAlert = false
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
 
-                    // --- Horizontal Swipe Cards ---
                     TabView {
                         ForEach(totalPortfolios) { portfolio in
                             VStack(alignment: .leading, spacing: 8) {
@@ -47,7 +47,6 @@ struct PortfolioView: View {
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
                     .indexViewStyle(.page(backgroundDisplayMode: .always))
                     
-                    // --- Accounts Section ---
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Top Holdings")
                             .font(.headline)
@@ -71,14 +70,29 @@ struct PortfolioView: View {
             }
             .navigationTitle("Portfolio")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button(action: {
                         showingConnectBrokerage.toggle()
                     }) {
                         Image(systemName: "plus")
                             .font(.title2)
                     }
+                    
+                    Button {
+                        signOutAlert = true
+                    } label: {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.title2)
+                    }
                 }
+            }
+            .alert("Sign out?", isPresented: $signOutAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Sign Out", role: .destructive) {
+                    Task { await authViewModel.signOut() }
+                }
+            } message: {
+                Text("You will be logged out of your account.")
             }
             .sheet(isPresented: $showingConnectBrokerage) {
                 ConnectBrokerageView()
@@ -100,7 +114,7 @@ struct Account: Identifiable {
     let balance: Double
 }
 
-#Preview {
-    PortfolioView()
-        .environmentObject(AuthViewModel())
-}
+//#Preview {
+//    PortfolioView()
+//        .environmentObject(AuthViewModel())
+//}
