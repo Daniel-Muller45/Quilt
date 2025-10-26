@@ -8,10 +8,18 @@ struct QuiltApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
+                // MARK: - App States
                 if authViewModel.isLoading {
+                    // Loading while checking Supabase session
                     LoadingView()
                         .preferredColorScheme(.dark)
+                } else if authViewModel.session == nil {
+                    // Not signed in → show login screen
+                    LoginView()
+                        .environmentObject(authViewModel)
+                        .preferredColorScheme(.dark)
                 } else {
+                    // Signed in → show main app
                     ProtectedView {
                         MainTabView()
                     }
@@ -19,27 +27,37 @@ struct QuiltApp: App {
                     .preferredColorScheme(.dark)
                 }
 
-                if authViewModel.isLocked {
-                    ZStack {
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
-                            .ignoresSafeArea()
+                // MARK: - Lock Screen Overlay
+                if authViewModel.isLocked, authViewModel.session != nil {
+                    if authViewModel.biometricsEnabled {
+                        // Face ID unlock screen
+                        ZStack {
+                            Rectangle()
+                                .fill(.ultraThinMaterial)
+                                .ignoresSafeArea()
 
-                        VStack(spacing: 16) {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.white)
-                            Text("Unlock with Face ID")
-                                .foregroundColor(.white)
-                                .font(.headline)
+                            VStack(spacing: 16) {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.white)
+                                Text("Unlock with Face ID")
+                                    .foregroundColor(.white)
+                                    .font(.headline)
+                            }
                         }
-                    }
-                    .onAppear {
-                        Task { await authViewModel.unlockApp() }
+                        .transition(.opacity)
+                        .onAppear {
+                            Task { await authViewModel.unlockApp() }
+                        }
+                    } else {
+                        // No biometrics → fallback to login
+                        LoginView()
+                            .environmentObject(authViewModel)
+                            .transition(.opacity)
                     }
                 }
-
             }
+            // MARK: - Scene Phase Locking
             .onChange(of: scenePhase) { newPhase in
                 switch newPhase {
                 case .background:

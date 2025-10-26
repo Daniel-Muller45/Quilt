@@ -88,50 +88,50 @@ struct PortfolioView: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.secondary)
-                        .padding(.horizontal)
+                        .padding()
                     Spacer()
+                }
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        ForEach(accounts.indices, id: \.self) { index in
+                            let account = accounts[index]
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(account.name)
+                                    .font(.headline)
+                                Text(account.balance.formatted(.currency(code: "USD")))
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Text(String(format: "%+.2f%%", account.change))
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(account.change >= 0 ? .green : .red)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(selectedAccountIndex == index ? Color.blue.opacity(0.15) : Color.clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(selectedAccountIndex == index ? Color.blue : Color.gray.opacity(0.4), lineWidth: 1.5)
+                            )
+                            .cornerRadius(12)
+                            .padding(.horizontal, 12)
+                            .onTapGesture {
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.prepare() // primes the Taptic Engine
+                                withAnimation(.easeInOut) {
+                                    selectedAccountIndex = index
+                                }
+                                generator.impactOccurred() // trigger after state change
+                            }
+                        }
+                    }
                 }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Account cards
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 2) {
-                                ForEach(accounts.indices, id: \.self) { index in
-                                    let account = accounts[index]
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text(account.name)
-                                            .font(.headline)
-                                        Text(account.balance.formatted(.currency(code: "USD")))
-                                            .font(.system(size: 28, weight: .bold))
-                                            .foregroundColor(.primary)
-                                        Text(String(format: "%+.2f%%", account.change))
-                                            .font(.subheadline)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(account.change >= 0 ? .green : .red)
-                                    }
-                                    .padding()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(selectedAccountIndex == index ? Color.blue.opacity(0.15) : Color.clear)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(selectedAccountIndex == index ? Color.blue : Color.gray.opacity(0.4), lineWidth: 1.5)
-                                    )
-                                    .cornerRadius(12)
-                                    .padding(.horizontal, 12)
-                                    .onTapGesture {
-                                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                                        generator.prepare() // primes the Taptic Engine
-                                        withAnimation(.easeInOut) {
-                                            selectedAccountIndex = index
-                                        }
-                                        generator.impactOccurred() // trigger after state change
-                                    }
-                                }
-                            }
-                        }
 
                         // Holdings list
                         VStack(alignment: .leading, spacing: 2) {

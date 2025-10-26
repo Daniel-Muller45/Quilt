@@ -8,12 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		3409ABC82EAC42F20077149A /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 3409ABC62EAC42E30077149A /* .gitignore */; };
-		34CCC4F82EAB0CCE008888D9 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4F72EAB0CCE008888D9 /* Supabase */; };
-		34CCC4FA2EAB0CD5008888D9 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4F92EAB0CD5008888D9 /* Auth */; };
-		34CCC4FC2EAB0CD5008888D9 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4FB2EAB0CD5008888D9 /* Functions */; };
-		34CCC4FE2EAB0CD5008888D9 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4FD2EAB0CD5008888D9 /* PostgREST */; };
-		34CCC5002EAB0CD5008888D9 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC4FF2EAB0CD5008888D9 /* Realtime */; };
-		34CCC5022EAB0CD5008888D9 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 34CCC5012EAB0CD5008888D9 /* Storage */; };
+		3409ADAA2EAD5C4E0077149A /* ScalingHeaderScrollView in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADA92EAD5C4E0077149A /* ScalingHeaderScrollView */; };
+		3409ADAD2EAD5C660077149A /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADAC2EAD5C660077149A /* Auth */; };
+		3409ADAF2EAD5C660077149A /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADAE2EAD5C660077149A /* Functions */; };
+		3409ADB12EAD5C660077149A /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADB02EAD5C660077149A /* PostgREST */; };
+		3409ADB32EAD5C660077149A /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADB22EAD5C660077149A /* Realtime */; };
+		3409ADB52EAD5C660077149A /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADB42EAD5C660077149A /* Storage */; };
+		3409ADB72EAD5C660077149A /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 3409ADB62EAD5C660077149A /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,12 +48,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				34CCC5022EAB0CD5008888D9 /* Storage in Frameworks */,
-				34CCC4FE2EAB0CD5008888D9 /* PostgREST in Frameworks */,
-				34CCC4FC2EAB0CD5008888D9 /* Functions in Frameworks */,
-				34CCC4FA2EAB0CD5008888D9 /* Auth in Frameworks */,
-				34CCC5002EAB0CD5008888D9 /* Realtime in Frameworks */,
-				34CCC4F82EAB0CCE008888D9 /* Supabase in Frameworks */,
+				3409ADB72EAD5C660077149A /* Supabase in Frameworks */,
+				3409ADB52EAD5C660077149A /* Storage in Frameworks */,
+				3409ADB12EAD5C660077149A /* PostgREST in Frameworks */,
+				3409ADAF2EAD5C660077149A /* Functions in Frameworks */,
+				3409ADAD2EAD5C660077149A /* Auth in Frameworks */,
+				3409ADB32EAD5C660077149A /* Realtime in Frameworks */,
+				3409ADAA2EAD5C4E0077149A /* ScalingHeaderScrollView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,12 +98,13 @@
 			);
 			name = Quilt;
 			packageProductDependencies = (
-				34CCC4F72EAB0CCE008888D9 /* Supabase */,
-				34CCC4F92EAB0CD5008888D9 /* Auth */,
-				34CCC4FB2EAB0CD5008888D9 /* Functions */,
-				34CCC4FD2EAB0CD5008888D9 /* PostgREST */,
-				34CCC4FF2EAB0CD5008888D9 /* Realtime */,
-				34CCC5012EAB0CD5008888D9 /* Storage */,
+				3409ADA92EAD5C4E0077149A /* ScalingHeaderScrollView */,
+				3409ADAC2EAD5C660077149A /* Auth */,
+				3409ADAE2EAD5C660077149A /* Functions */,
+				3409ADB02EAD5C660077149A /* PostgREST */,
+				3409ADB22EAD5C660077149A /* Realtime */,
+				3409ADB42EAD5C660077149A /* Storage */,
+				3409ADB62EAD5C660077149A /* Supabase */,
 			);
 			productName = Quilt;
 			productReference = 34CCC4CC2EAB0AE2008888D9 /* Quilt.app */;
@@ -132,7 +135,8 @@
 			mainGroup = 34CCC4C32EAB0AE2008888D9;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				3409ADA82EAD5C4E0077149A /* XCRemoteSwiftPackageReference "ScalingHeaderScrollView" */,
+				3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 34CCC4CD2EAB0AE2008888D9 /* Products */;
@@ -367,7 +371,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+		3409ADA82EAD5C4E0077149A /* XCRemoteSwiftPackageReference "ScalingHeaderScrollView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/exyte/ScalingHeaderScrollView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.1;
+			};
+		};
+		3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase-community/supabase-swift";
 			requirement = {
@@ -378,35 +390,40 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		34CCC4F72EAB0CCE008888D9 /* Supabase */ = {
+		3409ADA92EAD5C4E0077149A /* ScalingHeaderScrollView */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
+			package = 3409ADA82EAD5C4E0077149A /* XCRemoteSwiftPackageReference "ScalingHeaderScrollView" */;
+			productName = ScalingHeaderScrollView;
 		};
-		34CCC4F92EAB0CD5008888D9 /* Auth */ = {
+		3409ADAC2EAD5C660077149A /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Auth;
 		};
-		34CCC4FB2EAB0CD5008888D9 /* Functions */ = {
+		3409ADAE2EAD5C660077149A /* Functions */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Functions;
 		};
-		34CCC4FD2EAB0CD5008888D9 /* PostgREST */ = {
+		3409ADB02EAD5C660077149A /* PostgREST */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = PostgREST;
 		};
-		34CCC4FF2EAB0CD5008888D9 /* Realtime */ = {
+		3409ADB22EAD5C660077149A /* Realtime */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Realtime;
 		};
-		34CCC5012EAB0CD5008888D9 /* Storage */ = {
+		3409ADB42EAD5C660077149A /* Storage */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34CCC4E32EAB0BA6008888D9 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Storage;
+		};
+		3409ADB62EAD5C660077149A /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3409ADAB2EAD5C660077149A /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

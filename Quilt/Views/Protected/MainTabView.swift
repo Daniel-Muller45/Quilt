@@ -11,7 +11,8 @@ struct MainTabView: View {
                 .tabItem {
                     Label("News", systemImage: "newspaper.fill")
                 }
-
+            
+        
 //            ProfileView()
 //                .tabItem {
 //                    Label("Profile", systemImage: "person.crop.circle")
