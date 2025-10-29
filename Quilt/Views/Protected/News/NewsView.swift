@@ -31,6 +31,34 @@ struct NewsView: View {
                     }
                     .listStyle(.plain)
                 }
+                Button("Test Register") {
+                    Task {
+                        do {
+                            // Get the Supabase session
+                            if let session = try await SupabaseService.shared.getSession() {
+                                let token = session.accessToken
+                                print("token: \(token)")
+                                let service = BrokerageService()
+                                
+                                // Call your FastAPI backend
+                                service.loadAccounts(userId: "", userSecret: "", token: token) { result in
+                                    switch result {
+                                    case .success(let accounts):
+                                        print("✅ SnapTrade user registered:", accounts)
+                                    case .failure(let error):
+                                        print("❌ Error registering:", error)
+                                    }
+                                }
+                            } else {
+                                print("❌ No active session found")
+                            }
+                        } catch {
+                            print("❌ Failed to get session:", error)
+                        }
+                    }
+                }
+
+
             }
             .navigationTitle("Market News")
             .onAppear {
