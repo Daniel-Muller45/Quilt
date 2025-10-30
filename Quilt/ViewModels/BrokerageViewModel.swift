@@ -33,9 +33,24 @@ class BrokerageViewModel: ObservableObject {
         }
     }
     
+    func registerPublicUser(uid: String) {
+        isLoading = true
+        brokerageService.registerPublicUser(uid: uid) { result in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                switch result {
+                case .success(let user):
+                    print("✅ Registered:", user)
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
     func getLoginRedirect(userId: String, userSecret: String, brokerage: String, token: String) {
         isLoading = true
-        brokerageService.getLoginRedirect(userId: userId, userSecret: userSecret, brokerage: brokerage, token: token) { result in
+        brokerageService.getLoginRedirect(userId: userId, userSecret: userSecret, brokerage: brokerage) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {

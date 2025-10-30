@@ -4,6 +4,9 @@ struct NewsView: View {
     @State private var articles: [NewsArticle] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
+    
+    @StateObject private var brokerageViewModel = BrokerageViewModel()
+
 
     var body: some View {
         NavigationStack {
@@ -34,29 +37,17 @@ struct NewsView: View {
                 Button("Test Register") {
                     Task {
                         do {
-                            // Get the Supabase session
                             if let session = try await SupabaseService.shared.getSession() {
                                 let token = session.accessToken
-                                print("token: \(token)")
-                                let service = BrokerageService()
-                                
-                                // Call your FastAPI backend
-                                service.loadAccounts(userId: "", userSecret: "", token: token) { result in
-                                    switch result {
-                                    case .success(let accounts):
-                                        print("✅ SnapTrade user registered:", accounts)
-                                    case .failure(let error):
-                                        print("❌ Error registering:", error)
-                                    }
-                                }
-                            } else {
-                                print("❌ No active session found")
+                                print(token)
+                                brokerageViewModel.loadAccounts(userId: "USER_ID", userSecret: "USER_SECRET", token: token)
                             }
                         } catch {
                             print("❌ Failed to get session:", error)
                         }
                     }
                 }
+
 
 
             }

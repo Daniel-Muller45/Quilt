@@ -26,19 +26,55 @@ final class BrokerageService {
                 }
             }
         }
+
+//    func registerPublicUser(uid: String, completion: @escaping (Result<SnapTradeUser, Error>) -> Void) {
+//            let body = ["uid": uid]
+//            
+//            NetworkManager.shared.makePublicRequest(
+//                to: "/brokerages/public/register",
+//                method: "POST",
+//                body: body
+//            ) { (result: Result<RegisterUserResponse, Error>) in
+//                switch result {
+//                case .success(let response):
+//                    let user = response.data
+//                    LocalStorage.saveBrokerageData(
+//                        TempBrokerageData(
+//                            userId: user.userId,
+//                            userSecret: user.userSecret,
+//                            accounts: nil,
+//                            holdings: nil
+//                        )
+//                    )
+//                    completion(.success(response.data))
+//                case .failure(let error):
+//                    completion(.failure(error))
+//                }
+//            }
+//        }
     
-    func getLoginRedirect(userId: String, userSecret: String, brokerage: String, token: String, completion: @escaping (Result<String, Error>) -> Void) {
+    func registerPublicUser(uid: String, completion: @escaping (Result<SnapTradeUser, Error>) -> Void) {
+        LocalStorage.saveBrokerageData(
+            TempBrokerageData(
+                userId: "d98eaec8-a5d7-4784-8580-5490523c1f45",
+                userSecret: "fa4a315e-4027-48bd-8e1d-35f140ca1eec",
+                accounts: nil,
+                holdings: nil
+            )
+        )
+    }
+    
+    func getLoginRedirect(userId: String, userSecret: String, brokerage: String, completion: @escaping (Result<String, Error>) -> Void) {
             let body = [
                 "user_id": userId,
                 "user_secret": userSecret,
                 "brokerage": brokerage
             ]
             
-            NetworkManager.shared.makeRequest(
+            NetworkManager.shared.makePublicRequest(
                 to: "/brokerages/login-redirect",
                 method: "POST",
-                body: body,
-                authToken: token
+                body: body
             ) { (result: Result<LoginRedirectResponse, Error>) in
                 switch result {
                 case .success(let response):

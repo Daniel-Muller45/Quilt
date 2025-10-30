@@ -26,14 +26,12 @@ class AuthViewModel: ObservableObject {
     func signIn(email: String, password: String, remember: Bool = true) async throws {
         let session = try await service.signIn(email: email, password: password)
         self.session = session
-        self.isLocked = false // ✅ unlock app on successful login
-
+        self.isLocked = false
         if remember {
             keychain.save(email, service: "Quilt", account: "email")
             keychain.save(password, service: "Quilt", account: "password")
         }
 
-        // Update biometrics availability
         biometricsEnabled = BiometricService.shared.isBiometricsAvailable() &&
                             keychain.read(service: "Quilt", account: "email") != nil
     }
