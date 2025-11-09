@@ -1,21 +1,20 @@
 import SwiftUI
+import SwiftData
+
 
 @main
 struct QuiltApp: App {
-    @StateObject private var authViewModel = AuthViewModel()
-    @Environment(\.scenePhase) private var scenePhase
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                if !hasCompletedOnboarding {
-                    OnboardingFlowView()
-                        .preferredColorScheme(.dark)
-                } else {
-                    AuthRootView()
-                }
-            }
+            AuthRootView()
         }
+        .modelContainer(sharedContainer)
     }
 }
+
+let sharedContainer: ModelContainer = {
+    let schema = Schema([Portfolio.self, Account.self, Holding.self])
+    let config = ModelConfiguration(isStoredInMemoryOnly: false)
+    return try! ModelContainer(for: schema, configurations: [config])
+}()

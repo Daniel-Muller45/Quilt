@@ -26,42 +26,6 @@ struct AuthRootView: View {
                 .environmentObject(authViewModel)
                 .preferredColorScheme(.dark)
             }
-
-            if authViewModel.isLocked, authViewModel.session != nil {
-                if authViewModel.biometricsEnabled {
-                    ZStack {
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
-                            .ignoresSafeArea()
-                        VStack(spacing: 16) {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.white)
-                            Text("Unlock with Face ID")
-                                .foregroundColor(.white)
-                                .font(.headline)
-                        }
-                    }
-                    .onAppear {
-                        Task { await authViewModel.unlockApp() }
-                    }
-                } else {
-                    LoginView()
-                        .environmentObject(authViewModel)
-                }
-            }
-        }
-        .onChange(of: scenePhase) { newPhase in
-            switch newPhase {
-            case .background:
-                authViewModel.lockApp()
-            case .active:
-                if authViewModel.isLocked {
-                    Task { await authViewModel.unlockApp() }
-                }
-            default:
-                break
-            }
         }
     }
 }
