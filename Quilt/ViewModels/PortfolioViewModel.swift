@@ -51,32 +51,5 @@ final class PortfolioViewModel: ObservableObject {
         }
     }
     
-    @MainActor
-    private static func upsertHolding(dto: HoldingDTO, ctx: ModelContext, account: Account, asOf: Date) -> Holding {
-        let id = dto.id
-        var desc = FetchDescriptor<Holding>(
-            predicate: #Predicate<Holding> { $0.remoteID == id }
-        )
-        desc.fetchLimit = 1
 
-        if let existing = try? ctx.fetch(desc).first {
-            existing.symbol = dto.symbol
-            existing.quantity = dto.quantity
-            existing.avgCost = dto.avgCost
-            existing.updatedAt = asOf
-            existing.account = account
-            return existing
-        } else {
-            let fresh = Holding(
-                remoteID: dto.id,
-                symbol: dto.symbol,
-                quantity: dto.quantity,
-                avgCost: dto.avgCost,
-                updatedAt: asOf,
-                account: account
-            )
-            ctx.insert(fresh)
-            return fresh
-        }
-    }
 }

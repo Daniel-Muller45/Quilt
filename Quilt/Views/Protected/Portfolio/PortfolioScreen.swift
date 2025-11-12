@@ -11,7 +11,7 @@ struct PortfolioScreen: View {
     var body: some View {
         NavigationStack {
             VStack {
-                PortfolioSummaryView()
+                PortfolioSummaryView(token: token)
             }
         }
         .onAppear { vm.bind(modelContext: modelContext) }

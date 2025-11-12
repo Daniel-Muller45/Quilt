@@ -4,19 +4,21 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
-    var baseURL: URL = URL(string: "http://192.168.1.201:8001")!
+    var baseURL: URL = URL(string: "https://b6a2e7c1797c.ngrok-free.app")!
 
     // MARK: - Public
 
     func getPortfolio(token: String) async throws -> PortfolioResponse {
-        var request = URLRequest(url: baseURL.appendingPathComponent("/portfolio"))
+        var request = URLRequest(url: baseURL.appendingPathComponent("/portfolio/mock"))
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         try assertOK(response, data: data, endpoint: "/portfolio")
-        return try decodeWithLogging(PortfolioResponse.self, data: data, endpoint: "/portfolio")
+        print("response \(response)")
+        print("data \(data)")
+        return try decodeWithLogging(PortfolioResponse.self, data: data, endpoint: "/portfolio/mock")
     }
 
     func getPrices(symbols: [String], token: String) async throws -> PricesResponse {
@@ -33,6 +35,27 @@ final class APIClient {
         let (data, response) = try await URLSession.shared.data(for: request)
         try assertOK(response, data: data, endpoint: "/prices")
         return try decodeWithLogging(PricesResponse.self, data: data, endpoint: "/prices")
+    }
+    
+    func getLoginRedirect(brokerage: String, token: String) async throws -> LoginRedirectResponse {
+        var request = URLRequest(url: baseURL.appendingPathComponent("/brokerages/login-redirect"))
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let body: [String: Any] = ["brokerage": brokerage]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        print("token \(token)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try assertOK(response, data: data, endpoint: "/login-redirect")
+
+        let backend = try decodeWithLogging(LoginRedirectResponse.self, data: data, endpoint: "/login-redirect")
+
+        return LoginRedirectResponse(
+            redirectURI: backend.redirectURI,
+            sessionId: backend.sessionId ?? ""
+        )
     }
 
     // MARK: - Helpers

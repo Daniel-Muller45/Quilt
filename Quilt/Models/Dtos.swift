@@ -44,3 +44,8 @@ public struct PriceErrorDTO: Decodable {
     public let symbol: String
     public let message: String
 }
+
+public struct LoginRedirectResponse: Decodable {
+    let redirectURI: String
+    let sessionId: String?
+}
