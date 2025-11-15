@@ -139,6 +139,11 @@ struct OneYearPriceChart: View {
                         .opacity(0.15)
                     }
                 }
+                .chartYAxis(.hidden)           // ⛔ Hide Y axis and gridlines
+                .chartXAxis(.hidden)           // ⛔ Hide X axis and gridlines
+                .chartPlotStyle { plot in      // ⛔ Transparent plot background
+                    plot.background(.clear)
+                }
                 .chartYScale(domain: .automatic(includesZero: false))
                 .frame(height: 240)
             }

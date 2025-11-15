@@ -4,7 +4,7 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
-    var baseURL: URL = URL(string: "https://b6a2e7c1797c.ngrok-free.app")!
+    var baseURL: URL = URL(string: "http://localhost:8000")!
 
     // MARK: - Public
 

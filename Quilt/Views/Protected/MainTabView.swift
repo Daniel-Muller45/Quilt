@@ -18,6 +18,10 @@ struct MainTabView: View {
                     .tabItem {
                         Label("Portfolio", systemImage: "chart.pie.fill")
                     }
+            NewsScreen()
+                    .tabItem {
+                        Label("News", systemImage: "chart.pie.fill")
+                    }
 //            SettingsView()
 //                .tabItem {
 //                    Label("Settings", systemImage: "gearshape.fill")

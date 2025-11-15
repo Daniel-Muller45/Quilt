@@ -46,7 +46,7 @@ final class Account {
 
 @Model
 final class Holding {
-    @Attribute(.unique) var remoteID: String
+    var remoteID: String
     var symbol: String
     var quantity: Double
     var avgCost: Double

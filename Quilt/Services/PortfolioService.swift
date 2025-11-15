@@ -101,10 +101,20 @@ enum PortfolioService {
     }
 
     @MainActor
-    private static func upsertHolding(dto: HoldingDTO, ctx: ModelContext, account: Account, asOf: Date) -> Holding {
+    private static func upsertHolding(
+        dto: HoldingDTO,
+        ctx: ModelContext,
+        account: Account,
+        asOf: Date
+    ) -> Holding {
         let id = dto.id
+        let accountID = account.remoteID
+
         var desc = FetchDescriptor<Holding>(
-            predicate: #Predicate<Holding> { $0.remoteID == id }
+            predicate: #Predicate<Holding> { holding in
+                holding.remoteID == id &&
+                holding.account?.remoteID == accountID
+            }
         )
         desc.fetchLimit = 1
 
@@ -128,4 +138,5 @@ enum PortfolioService {
             return fresh
         }
     }
+
 }
