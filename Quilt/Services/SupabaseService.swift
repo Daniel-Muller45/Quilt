@@ -51,7 +51,6 @@ final class SupabaseService {
     }
     
     func fetchOneYearEOD(ticker: String) async throws -> [EODRow] {
-        // Compute start date (yyyy-MM-dd)
         let start = Calendar.current.date(byAdding: .day, value: -365, to: Date())!
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .iso8601)
@@ -59,7 +58,6 @@ final class SupabaseService {
         f.dateFormat = "yyyy-MM-dd"
         let startStr = f.string(from: start)
 
-        // PostgREST query: select date, close where ticker=..., date>=..., order by date asc
         let rows: [EODRow] = try await client
             .database
             .from("daily_stock_data")
@@ -72,5 +70,6 @@ final class SupabaseService {
 
         return rows
     }
+
 
 }

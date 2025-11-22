@@ -8,16 +8,14 @@ struct ConnectBrokerageView: View {
     @StateObject private var vm = ConnectBrokerageViewModel()
     @StateObject private var portfolioVM = PortfolioViewModel()
 
-    /// Pass the user’s bearer token from your auth layer
     let token: String
-    /// Custom URL scheme you registered in Info.plist and set in SnapTrade (e.g., "quilt")
     let callbackScheme: String = "quilt"
 
     struct Brokerage: Identifiable {
         let id = UUID()
         let name: String
         let logoName: String
-        let slug: String      // backend/SnapTrade slug (often uppercase like ROBINHOOD)
+        let slug: String
     }
 
     private let brokerages: [Brokerage] = [
@@ -37,40 +35,67 @@ struct ConnectBrokerageView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Connect a Brokerage")
+                Text("Connect")
                     .font(.title2).bold()
                     .padding(.top, 24)
                     .padding(.horizontal)
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        ForEach(brokerages) { b in
-                            Button {
-                                Task { await vm.startLink(brokerageSlug: b.slug, token: token) }
-                            } label: {
-                                HStack(spacing: 16) {
-                                    Image(b.logoName)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 36, height: 36)
-                                        .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                                    Text(b.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-
-                                    Spacer()
-                                    Image(systemName: "chevron.right").foregroundColor(.secondary)
-                                }
-                                .padding(.vertical, 12)
-                                .padding(.horizontal)
-                            }
-                            .buttonStyle(.plain)
-
-                            if b.id != brokerages.last?.id {
-                                Divider().padding(.leading, 64)
-                            }
+//                        ForEach(brokerages) { b in
+//                            Button {
+//                                Task { await vm.startLink(brokerageSlug: b.slug, token: token) }
+//                            } label: {
+//                                HStack(spacing: 16) {
+//                                    Image(b.logoName)
+//                                        .resizable()
+//                                        .scaledToFit()
+//                                        .frame(width: 36, height: 36)
+//                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+//
+//                                    Text(b.name)
+//                                        .font(.headline)
+//                                        .foregroundColor(.primary)
+//
+//                                    Spacer()
+//                                    Image(systemName: "chevron.right").foregroundColor(.secondary)
+//                                }
+//                                .padding(.vertical, 12)
+//                                .padding(.horizontal)
+//                            }
+//                            .buttonStyle(.plain)
+//
+//                            if b.id != brokerages.last?.id {
+//                                Divider().padding(.leading, 64)
+//                            }
+//                        }
+                        Button {
+                            Task { await vm.startConnectionPortal(token: token) }
+                        } label: {
+                            Text("Connect your brokerage")
                         }
+                        .buttonStyle(.plain)
+                        //                                Task { await vm.startLink(brokerageSlug: b.slug, token: token) }
+                        //                            } label: {
+                        //                                HStack(spacing: 16) {
+                        //                                    Image(b.logoName)
+                        //                                        .resizable()
+                        //                                        .scaledToFit()
+                        //                                        .frame(width: 36, height: 36)
+                        //                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        //
+                        //                                    Text(b.name)
+                        //                                        .font(.headline)
+                        //                                        .foregroundColor(.primary)
+                        //
+                        //                                    Spacer()
+                        //                                    Image(systemName: "chevron.right").foregroundColor(.secondary)
+                        //                                }
+                        //                                .padding(.vertical, 12)
+                        //                                .padding(.horizontal)
+                        //                            }
+                        //                            .buttonStyle(.plain)
+                        
                     }
                     .background(Color(.systemBackground))
                     .cornerRadius(12)

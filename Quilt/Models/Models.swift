@@ -76,16 +76,13 @@ final class Holding {
 }
 
 extension Holding {
-    /// Current market value using the stored marketPrice; falls back to 0 if nil
     var currentValue: Double { (marketPrice ?? 0) * quantity }
 
-    /// Market value at previous close (if we have prevClose)
     var prevCloseValue: Double? {
         guard let pc = prevClose else { return nil }
         return pc * quantity
     }
 
-    /// Day change % for this holding, based on last vs prevClose
     var dayChangePercent: Double? {
         guard let last = marketPrice, let pc = prevClose, pc > 0 else { return nil }
         return (last - pc) / pc * 100.0
@@ -93,19 +90,16 @@ extension Holding {
 }
 
 extension Account {
-    /// Sum of current market values across holdings
     var currentValue: Double {
         holdings.reduce(0) { $0 + $1.currentValue }
     }
 
-    /// Sum of previous-close market values (only counts holdings that have prevClose)
     var prevCloseValue: Double? {
         let pairs = holdings.compactMap { $0.prevCloseValue }
         guard !pairs.isEmpty else { return nil }
         return pairs.reduce(0, +)
     }
 
-    /// Account-level day % change (weighted by position sizes)
     var dayChangePercent: Double? {
         guard let prev = prevCloseValue, prev > 0 else { return nil }
         let cur = currentValue
@@ -115,7 +109,7 @@ extension Account {
 
 struct EODRow: Decodable, Identifiable {
     let id = UUID()
-    let date: String         // "yyyy-MM-dd" coming from PostgREST
+    let date: String
     let close: Double
 
     var dateValue: Date {
@@ -127,3 +121,87 @@ struct EODRow: Decodable, Identifiable {
     }
 }
 
+struct DailySnapshot: Identifiable, Decodable {
+    let id: Int
+    let date: String
+    let totalValue: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case date
+        case totalValue = "total_value"
+    }
+    
+    var dateValue: Date {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .iso8601)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.date(from: date) ?? .distantPast
+    }
+}
+
+enum TimeframePerformance: String, CaseIterable, Identifiable {
+    case d1 = "1D"
+    case w1 = "1W"
+    case m1 = "1M"
+    case m3 = "3M"
+    case y1 = "1Y"
+    case y5 = "5Y"
+    case all = "ALL"
+
+    var id: String { rawValue }
+
+    func startDate(from now: Date = Date()) -> Date? {
+        let cal = Calendar.current
+        switch self {
+        case .d1:  return cal.date(byAdding: .day, value: -1, to: now)
+        case .w1:  return cal.date(byAdding: .day, value: -7, to: now)
+        case .m1:  return cal.date(byAdding: .month, value: -1, to: now)
+        case .m3:  return cal.date(byAdding: .month, value: -3, to: now)
+        case .y1:  return cal.date(byAdding: .year, value: -1, to: now)
+        case .y5:  return cal.date(byAdding: .year, value: -5, to: now)
+        case .all: return nil
+        }
+    }
+}
+
+struct PerformancePoint: Identifiable {
+    let id = UUID()
+    let date: String
+    let value: Double
+}
+
+struct PortfolioSnapshot: Identifiable, Decodable {
+    let id = UUID()
+    let date: Date
+    let totalValue: Double
+
+    enum CodingKeys: String, CodingKey {
+        case date
+        case totalValue = "total_value"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Decode date as String from Supabase, then parse "yyyy-MM-dd"
+        let dateString = try container.decode(String.self, forKey: .date)
+
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        guard let parsedDate = formatter.date(from: dateString) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .date,
+                in: container,
+                debugDescription: "Invalid date format: \(dateString)"
+            )
+        }
+
+        self.date = parsedDate
+        self.totalValue = try container.decode(Double.self, forKey: .totalValue)
+    }
+}

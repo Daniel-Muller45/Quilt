@@ -3,18 +3,35 @@ import SwiftData
 
 struct PortfolioSummaryView: View {
     @Query(sort: \Account.name) private var accounts: [Account]
-    @State private var selectedIndex: Int = 0   // 0 = Total, 1... = accounts[index-1]
+    @State private var selectedIndex: Int = 0
     @State private var showingConnectBrokerage = false
+    @State private var selectedTimeframe: Timeframe = .d1
+    private let timeframes = Timeframe.allCases
     
     let token: String
 
-    // MARK: - Totals
+    // MARK: - Helper Struct for Display
+    /// Normalizes data between a raw Holding and an Aggregated Holding for the list
+    struct HoldingRowData: Identifiable {
+        let id: String
+        let symbol: String
+        let quantity: Double
+        let currentValue: Double
+        let dayChangePercent: Double?
+        let accountName: String?
+        // We keep a reference to one of the underlying holdings to satisfy the PositionDetailView requirement.
+        // Note: For aggregated rows, this links to the first holding found.
+        let representativeHolding: Holding
+    }
+
     private var totalCurrency: String {
         accounts.first?.currency ?? "USD"
     }
+    
     private var totalCurrentValue: Double {
         accounts.reduce(0) { $0 + $1.currentValue }
     }
+    
     private var totalDayChangePercent: Double? {
         guard !accounts.isEmpty, accounts.allSatisfy({ $0.dayChangePercent != nil }) else { return nil }
         let total = totalCurrentValue
@@ -25,128 +42,214 @@ struct PortfolioSummaryView: View {
         return (weighted / total) * 100.0
     }
 
-    // MARK: - Derived selection
     private var selectedIsTotal: Bool { selectedIndex == 0 }
+    
     private var selectedAccount: Account? {
         guard selectedIndex > 0, selectedIndex - 1 < accounts.count else { return nil }
         return accounts[selectedIndex - 1]
     }
-    private var holdingsToShow: [Holding] {
-        let sortByValue: (Holding, Holding) -> Bool = { a, b in
-            if a.currentValue == b.currentValue {
-                return a.symbol < b.symbol
-            } else {
-                return a.currentValue > b.currentValue   // DESC by market value
-            }
-        }
+    
+    // MARK: - Aggregation Logic
+    private var holdingsToShow: [HoldingRowData] {
         if selectedIsTotal {
-            return accounts.flatMap { $0.holdings }.sorted(by: sortByValue)
+            // 1. Get all holdings from all accounts
+            let allHoldings = accounts.flatMap { $0.holdings }
+            
+            // 2. Group by symbol
+            let grouped = Dictionary(grouping: allHoldings) { $0.symbol }
+            
+            // 3. Aggregate
+            let aggregated = grouped.map { symbol, holdings -> HoldingRowData in
+                let totalQty = holdings.reduce(0) { $0 + $1.quantity }
+                let totalVal = holdings.reduce(0) { $0 + $1.currentValue }
+                
+                // Calculate weighted average for day change %
+                // (Value * Pct) / TotalValue
+                var weightedSum = 0.0
+                if totalVal > 0 {
+                    weightedSum = holdings.reduce(0.0) { sum, h in
+                        sum + (h.currentValue * (h.dayChangePercent ?? 0))
+                    }
+                }
+                let avgPct = totalVal > 0 ? (weightedSum / totalVal) : 0.0
+                
+                // Use the first holding to satisfy NavigationLink requirements
+                let firstHolding = holdings.first!
+                
+                return HoldingRowData(
+                    id: "AGG_\(symbol)", // Unique ID for the list
+                    symbol: symbol,
+                    quantity: totalQty,
+                    currentValue: totalVal,
+                    dayChangePercent: avgPct,
+                    accountName: nil, // No account name for combined view
+                    representativeHolding: firstHolding
+                )
+            }
+            
+            // 4. Sort
+            return aggregated.sorted {
+                if $0.currentValue == $1.currentValue {
+                    return $0.symbol < $1.symbol
+                }
+                return $0.currentValue > $1.currentValue
+            }
+            
         } else {
-            return (selectedAccount?.holdings.sorted(by: sortByValue)) ?? []
+            // Single Account Mode
+            guard let account = selectedAccount else { return [] }
+            
+            let sortedHoldings = account.holdings.sorted {
+                if $0.currentValue == $1.currentValue {
+                    return $0.symbol < $1.symbol
+                }
+                return $0.currentValue > $1.currentValue
+            }
+            
+            // Map directly to RowData
+            return sortedHoldings.map { h in
+                HoldingRowData(
+                    id: String(describing: h.id),
+                    symbol: h.symbol,
+                    quantity: h.quantity,
+                    currentValue: h.currentValue,
+                    dayChangePercent: h.dayChangePercent,
+                    accountName: nil, // We are inside a specific account tab, usually redundant to show name, but can add `account.name` if desired. User requested "not show" for total list.
+                    representativeHolding: h
+                )
+            }
         }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Portfolios")
-                    .font(.largeTitle).fontWeight(.bold)
-                Spacer()
-                Button { showingConnectBrokerage.toggle() } label: {
-                    Image(systemName: "plus").imageScale(.large)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+            CustomHeader(
+                title: "Portfolio",
+                token: token
+            )
 
-            HStack {
-                Text(Date.now.formatted(.dateTime.month(.abbreviated).day().year()))
-                    .font(.subheadline).fontWeight(.medium).foregroundColor(.secondary)
-                    .padding()
-                Spacer()
-            }
-
-            if accounts.isEmpty {
-                VStack(spacing: 12) {
-                    Text("No accounts yet").foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                // MARK: Horizontal cards (Total + Accounts)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 2) {
-                        // Total card (index 0)
-                        totalCard
-                            .padding(.horizontal, 12)
-
-                        // Account cards (indices 1...N)
-                        ForEach(0..<accounts.count, id: \.self) { i in
-                            let index = i + 1
-                            let account = accounts[i]
-                            accountCard(account: account, isSelected: selectedIndex == index)
-                                .padding(.horizontal, 12)
-                                .onTapGesture {
-                                    let gen = UIImpactFeedbackGenerator(style: .medium)
-                                    gen.prepare()
-                                    withAnimation(.easeInOut) { selectedIndex = index }
-                                    gen.impactOccurred()
-                                }
-                        }
+            ScrollView {
+                if accounts.isEmpty {
+                    VStack(spacing: 12) {
+                        Text("No accounts yet").foregroundStyle(.secondary)
                     }
-                }
-
-                // MARK: Holdings list (for selected card)
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(selectedIsTotal ? "All Holdings" : "Holdings")
-                                .font(.headline)
-                                .padding(.horizontal)
-
-                            ForEach(holdingsToShow) { h in
-                                NavigationLink(destination: PositionDetailView(holding: h)) {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(h.symbol).font(.headline)
-                                            Text("\(h.quantity, specifier: "%.2f") shares")
-                                                .font(.subheadline).foregroundColor(.secondary)
-                                            if selectedIsTotal, let acctName = h.account?.name {
-                                                Text(acctName)
-                                                    .font(.caption).foregroundColor(.secondary)
-                                            }
-                                        }
-                                        Spacer()
-                                        VStack(alignment: .trailing, spacing: 4) {
-                                            let currency = selectedIsTotal
-                                                ? totalCurrency
-                                                : (selectedAccount?.currency ?? "USD")
-                                            Text(h.currentValue, format: .currency(code: currency))
-                                                .fontWeight(.semibold)
-                                            if let pct = h.dayChangePercent {
-                                                Text(String(format: "%+.2f%%", pct))
-                                                    .font(.subheadline).fontWeight(.semibold)
-                                                    .foregroundColor(pct >= 0 ? .green : .red)
-                                            } else {
-                                                Text("—").font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
-                                            }
-                                        }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 100)
+                } else {
+                    VStack(spacing: 12) {
+                        ScrollViewReader { proxy in
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    tabButton(title: "Total", index: 0)
+                                        .id(0)
+                                    
+                                    ForEach(Array(accounts.enumerated()), id: \.offset) { offset, account in
+                                        let index = offset + 1
+                                        tabButton(title: account.name, index: index)
+                                            .id(index)
                                     }
-                                    .padding()
-                                    .background(Color(.systemBackground))
-                                    .cornerRadius(12)
-                                    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
                                 }
-                                .buttonStyle(.plain)
+                                .padding(.horizontal)
+                            }
+                            .onChange(of: selectedIndex) { newValue in
+                                withAnimation(.easeInOut) {
+                                    proxy.scrollTo(newValue, anchor: .center)
+                                }
+                            }
+                            .onAppear {
+                                proxy.scrollTo(selectedIndex, anchor: .center)
                             }
                         }
                     }
-                    .padding(.vertical)
+                    
+                    TabView(selection: $selectedIndex) {
+                        totalCard
+                            .padding(.horizontal)
+                            .tag(0)
+                        
+                        ForEach(Array(accounts.enumerated()), id: \.offset) { offset, account in
+                            let index = offset + 1
+                            accountCard(account: account, isSelected: selectedIndex == index)
+                                .padding(.horizontal)
+                                .tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .frame(height: 270)
+                    
+                    timeframePicker
                 }
-                .refreshable {
-                    // trigger your sync
+                
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text("Holdings")
+                                .font(.headline)
+                                .padding(.horizontal)
+                            
+                            Spacer()
+                            
+                            Button {
+                                // TODO: show filter sheet or sort options
+                            } label: {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.trailing)
+                        }
+                        .padding()
+                        
+                        // Loop over our new HoldingRowData
+                        ForEach(Array(holdingsToShow.enumerated()), id: \.element.id) { index, h in
+                            NavigationLink(destination: PositionDetailView(holding: h.representativeHolding)) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        Text(h.symbol).font(.headline)
+                                        Text("\(h.quantity, specifier: "%.2f") shares")
+                                            .font(.subheadline).foregroundColor(.secondary)
+                                        
+                                        // Only show account name if it exists (it is nil in Total view)
+                                        if let acctName = h.accountName {
+                                            Text(acctName)
+                                                .font(.caption).foregroundColor(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        let currency = selectedIsTotal
+                                        ? totalCurrency
+                                        : (selectedAccount?.currency ?? "USD")
+                                        
+                                        Text(h.currentValue, format: .currency(code: currency))
+                                            .fontWeight(.semibold)
+                                        
+                                        if let pct = h.dayChangePercent {
+                                            Text(String(format: "%+.2f%%", pct))
+                                                .font(.subheadline).fontWeight(.semibold)
+                                                .foregroundColor(pct >= 0 ? .green : .red)
+                                        } else {
+                                            Text("—").font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
+                                .padding()
+                                .background(Color(UIColor.systemBackground))
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.horizontal) // Moved padding here for better list alignment
+                            
+                            // Add separator line between items, but not after the last one
+                            if index < holdingsToShow.count - 1 {
+                                Divider()
+                                    .padding(.horizontal, 32) // Indented slightly more than the cards
+                            }
+                        }
+                    }
                 }
+                .padding(.vertical)
                 .sheet(isPresented: $showingConnectBrokerage) {
                     ConnectBrokerageView(token: token)
                 }
@@ -156,66 +259,65 @@ struct PortfolioSummaryView: View {
             if selectedIndex >= accounts.count + 1 { selectedIndex = 0 }
         }
     }
-
-    // MARK: - Card Views
-
-    private var totalCard: some View {
-        let isSelected = selectedIndex == 0
-        return VStack(alignment: .leading, spacing: 8) {
-            Text("Total").font(.headline)
-            Text(totalCurrentValue, format: .currency(code: totalCurrency))
-                .font(.system(size: 28, weight: .bold))
-            if let pct = totalDayChangePercent {
-                Text(String(format: "%+.2f%%", pct))
-                    .font(.subheadline).fontWeight(.semibold)
-                    .foregroundColor(pct >= 0 ? .green : .red)
-            } else {
-                Text("—").font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? Color.blue.opacity(0.15) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? Color.blue : Color.gray.opacity(0.4), lineWidth: 1.5)
-        )
-        .cornerRadius(12)
-        .contentShape(Rectangle())
-        .onTapGesture {
+    
+    private func tabButton(title: String, index: Int) -> some View {
+        let isSelected = selectedIndex == index
+        return Button {
             let gen = UIImpactFeedbackGenerator(style: .medium)
             gen.prepare()
-            withAnimation(.easeInOut) { selectedIndex = 0 }
+            withAnimation(.easeInOut) { selectedIndex = index }
             gen.impactOccurred()
+        } label: {
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15,
+                                  weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? .primary : .secondary)
+                Capsule()
+                    .fill(isSelected ? Color.primary : Color.clear)
+                    .frame(height: 2)
+            }
         }
+        .buttonStyle(.plain)
+    }
+
+    private var totalCard: some View {
+        return VStack(alignment: .leading, spacing: 12) {
+            PortfolioHistoryChartView(selectedTimeframe: $selectedTimeframe)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func accountCard(account: Account, isSelected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(account.name).font(.headline)
-            Text(account.currentValue, format: .currency(code: account.currency))
-                .font(.system(size: 28, weight: .bold))
-            if let pct = account.dayChangePercent {
-                Text(String(format: "%+.2f%%", pct))
-                    .font(.subheadline).fontWeight(.semibold)
-                    .foregroundColor(pct >= 0 ? .green : .red)
-            } else {
-                Text("—").font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
-            }
+        return VStack(alignment: .leading, spacing: 12) {
+            PortfolioHistoryChartView(selectedTimeframe: $selectedTimeframe)
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? Color.blue.opacity(0.15) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? Color.blue : Color.gray.opacity(0.4), lineWidth: 1.5)
-        )
-        .cornerRadius(12)
+    }
+    
+    private var timeframePicker: some View {
+        HStack(spacing: 16) {
+            Spacer()
+            ForEach(timeframes) { tf in
+                Button {
+                    withAnimation(.easeInOut) {
+                        selectedTimeframe = tf
+                    }
+                } label: {
+                    Text(tf.rawValue)
+                        .font(.caption)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(
+                            Capsule()
+                                .fill(selectedTimeframe == tf
+                                      ? Color.secondary.opacity(0.3) // Adjusted for visibility
+                                      : Color.clear)
+                        )
+                        .foregroundColor(selectedTimeframe == tf ? .primary : .secondary)
+                }
+            }
+            Spacer()
+        }
     }
 }

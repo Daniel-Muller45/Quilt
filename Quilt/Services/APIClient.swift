@@ -9,7 +9,7 @@ final class APIClient {
     // MARK: - Public
 
     func getPortfolio(token: String) async throws -> PortfolioResponse {
-        var request = URLRequest(url: baseURL.appendingPathComponent("/portfolio/mock"))
+        var request = URLRequest(url: baseURL.appendingPathComponent("/portfolio"))
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -18,7 +18,7 @@ final class APIClient {
         try assertOK(response, data: data, endpoint: "/portfolio")
         print("response \(response)")
         print("data \(data)")
-        return try decodeWithLogging(PortfolioResponse.self, data: data, endpoint: "/portfolio/mock")
+        return try decodeWithLogging(PortfolioResponse.self, data: data, endpoint: "/portfolio")
     }
 
     func getPrices(symbols: [String], token: String) async throws -> PricesResponse {
@@ -51,6 +51,25 @@ final class APIClient {
         try assertOK(response, data: data, endpoint: "/login-redirect")
 
         let backend = try decodeWithLogging(LoginRedirectResponse.self, data: data, endpoint: "/login-redirect")
+
+        return LoginRedirectResponse(
+            redirectURI: backend.redirectURI,
+            sessionId: backend.sessionId ?? ""
+        )
+    }
+    
+    func getLoginConnectionPortal(token: String) async throws -> LoginRedirectResponse {
+        var request = URLRequest(url: baseURL.appendingPathComponent("/brokerages/login-connection-portal"))
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        print("token \(token)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try assertOK(response, data: data, endpoint: "/login-connection-portal")
+
+        let backend = try decodeWithLogging(LoginRedirectResponse.self, data: data, endpoint: "/login-connection-portal")
 
         return LoginRedirectResponse(
             redirectURI: backend.redirectURI,

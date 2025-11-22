@@ -40,6 +40,26 @@ final class ConnectBrokerageViewModel: ObservableObject {
             self.error = error.localizedDescription
         }
     }
+    
+    func startConnectionPortal(token: String) async {
+        guard shouldStart() else { return }
+        isLinking = true
+        error = nil
+        defer { isLinking = false }
+
+        do {
+            let resp = try await APIClient.shared.getLoginConnectionPortal(token: token)
+            guard let url = URL(string: resp.redirectURI) else {
+                throw URLError(.badURL)
+            }
+            self.redirectURL = url
+            self.lastStart = Date()
+        } catch is CancellationError {
+            // benign
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 
     /// Call this when your app receives the callback (e.g., quilt://callback?status=success&state=...).
     /// Optionally triggers a full portfolio refresh to pull in linked accounts.

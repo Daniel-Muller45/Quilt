@@ -2,30 +2,30 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
+
+    @State private var selectedTab = 1
+
     var body: some View {
-        TabView {
-//            PortfolioView()
-//                .tabItem {
-//                    Label("Portfolio", systemImage: "chart.pie.fill")
-//                }
-//            NewsView()
-//                .tabItem {
-//                    Label("News", systemImage: "newspaper.fill")
-//                }
-            
-        
+        TabView(selection: $selectedTab) {
+
+            AnalysisView()
+                .tabItem {
+                    Label("Analysis", systemImage: "arrow.up.arrow.down")
+                }
+                .tag(0)
+
             PortfolioScreen(token: authViewModel.session?.accessToken ?? "")
-                    .tabItem {
-                        Label("Portfolio", systemImage: "chart.pie.fill")
-                    }
+                .tabItem {
+                    Label("Portfolio", systemImage: "chart.pie.fill")
+                }
+                .tag(1)
+
             NewsScreen()
-                    .tabItem {
-                        Label("News", systemImage: "chart.pie.fill")
-                    }
-//            SettingsView()
-//                .tabItem {
-//                    Label("Settings", systemImage: "gearshape.fill")
-//                }
+                .tabItem {
+                    Label("News", systemImage: "newspaper.fill")
+                }
+                .tag(2)
         }
+        .accentColor(.white)
     }
 }
