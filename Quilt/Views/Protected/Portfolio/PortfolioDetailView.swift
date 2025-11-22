@@ -33,15 +33,17 @@ struct PositionDetailView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(holding.symbol)
                             .font(.system(size: 28, weight: .bold, design: .rounded))
-                        Text("CoreWeave, Inc.")
+                        Text(holding.symbolDescription)
                             .foregroundStyle(.secondary)
                             .font(.subheadline)
                     }
 
                     HStack(spacing: 8) {
-                        Text(holding.currentValue, format: .currency(code: "USD"))
-                            .font(.title3.weight(.semibold))
-                        if let pct = vm.pctReturn1Y {
+                        if let price = holding.marketPrice {
+                            Text(price, format: .currency(code: "USD"))
+                                .font(.title3.weight(.semibold))
+                        }
+                        if let pct = holding.dayChangePercent {
                             Text(String(format: "%+.2f%%", pct))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(pct >= 0 ? .green : .red)

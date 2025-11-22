@@ -48,6 +48,7 @@ final class Account {
 final class Holding {
     var remoteID: String
     var symbol: String
+    var symbolDescription: String
     var quantity: Double
     var avgCost: Double
     var marketPrice: Double?
@@ -56,9 +57,10 @@ final class Holding {
     var prevClose: Double?
     @Relationship var account: Account?
 
-    init(remoteID: String, symbol: String, quantity: Double, avgCost: Double, marketPrice: Double? = nil, updatedAt: Date, account: Account? = nil) {
+    init(remoteID: String, symbol: String, symbolDescription: String, quantity: Double, avgCost: Double, marketPrice: Double? = nil, updatedAt: Date, account: Account? = nil) {
         self.remoteID = remoteID
         self.symbol = symbol
+        self.symbolDescription = symbolDescription
         self.quantity = quantity
         self.avgCost = avgCost
         self.marketPrice = marketPrice

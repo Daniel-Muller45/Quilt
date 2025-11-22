@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct NewsScreen: View {
+struct AnalysisScreen: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var vm = PortfolioViewModel()
     private let token: String
@@ -11,7 +11,7 @@ struct NewsScreen: View {
     var body: some View {
         NavigationStack {
             VStack {
-                NewsView(token: token)
+                AnalysisView(token: token)
             }
         }
         .onAppear { vm.bind(modelContext: modelContext) }

@@ -8,9 +8,9 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
 
-            AnalysisView()
+            AnalysisScreen(token: authViewModel.session?.accessToken ?? "")
                 .tabItem {
-                    Label("Analysis", systemImage: "arrow.up.arrow.down")
+                    Label("Analysis", systemImage: "chart.line.uptrend.xyaxis")
                 }
                 .tag(0)
 
@@ -20,7 +20,7 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            NewsScreen()
+            NewsScreen(token: authViewModel.session?.accessToken ?? "")
                 .tabItem {
                     Label("News", systemImage: "newspaper.fill")
                 }

@@ -8,6 +8,19 @@ struct PortfolioSummaryView: View {
     @State private var selectedTimeframe: Timeframe = .d1
     private let timeframes = Timeframe.allCases
     
+    // Sorting State
+    @State private var sortOption: SortOption = .value
+    @State private var sortAscending: Bool = false
+    
+    enum SortOption: String, CaseIterable, Identifiable {
+        case value = "Total Value"
+        case totalReturn = "Total Return"
+        case dayPercent = "Today's % Change"
+        case totalPercent = "Total % Change"
+        
+        var id: String { rawValue }
+    }
+    
     let token: String
 
     // MARK: - Helper Struct for Display
@@ -17,11 +30,15 @@ struct PortfolioSummaryView: View {
         let symbol: String
         let quantity: Double
         let currentValue: Double
+        let totalCost: Double // Calculated as avgCost * quantity
         let dayChangePercent: Double?
         let accountName: String?
         // We keep a reference to one of the underlying holdings to satisfy the PositionDetailView requirement.
-        // Note: For aggregated rows, this links to the first holding found.
         let representativeHolding: Holding
+        
+        // Computed helpers for sorting
+        var totalReturn: Double { currentValue - totalCost }
+        var totalReturnPercent: Double { totalCost != 0 ? (currentValue - totalCost) / totalCost : 0 }
     }
 
     private var totalCurrency: String {
@@ -51,6 +68,8 @@ struct PortfolioSummaryView: View {
     
     // MARK: - Aggregation Logic
     private var holdingsToShow: [HoldingRowData] {
+        var data: [HoldingRowData] = []
+        
         if selectedIsTotal {
             // 1. Get all holdings from all accounts
             let allHoldings = accounts.flatMap { $0.holdings }
@@ -59,12 +78,14 @@ struct PortfolioSummaryView: View {
             let grouped = Dictionary(grouping: allHoldings) { $0.symbol }
             
             // 3. Aggregate
-            let aggregated = grouped.map { symbol, holdings -> HoldingRowData in
+            data = grouped.map { symbol, holdings -> HoldingRowData in
                 let totalQty = holdings.reduce(0) { $0 + $1.quantity }
                 let totalVal = holdings.reduce(0) { $0 + $1.currentValue }
                 
+                // Calculate Total Cost using avgCost * quantity
+                let totalCost = holdings.reduce(0) { $0 + ($1.avgCost * $1.quantity) }
+                
                 // Calculate weighted average for day change %
-                // (Value * Pct) / TotalValue
                 var weightedSum = 0.0
                 if totalVal > 0 {
                     weightedSum = holdings.reduce(0.0) { sum, h in
@@ -73,50 +94,51 @@ struct PortfolioSummaryView: View {
                 }
                 let avgPct = totalVal > 0 ? (weightedSum / totalVal) : 0.0
                 
-                // Use the first holding to satisfy NavigationLink requirements
                 let firstHolding = holdings.first!
                 
                 return HoldingRowData(
-                    id: "AGG_\(symbol)", // Unique ID for the list
+                    id: "AGG_\(symbol)",
                     symbol: symbol,
                     quantity: totalQty,
                     currentValue: totalVal,
+                    totalCost: totalCost,
                     dayChangePercent: avgPct,
-                    accountName: nil, // No account name for combined view
+                    accountName: nil,
                     representativeHolding: firstHolding
                 )
             }
-            
-            // 4. Sort
-            return aggregated.sorted {
-                if $0.currentValue == $1.currentValue {
-                    return $0.symbol < $1.symbol
-                }
-                return $0.currentValue > $1.currentValue
-            }
-            
         } else {
             // Single Account Mode
             guard let account = selectedAccount else { return [] }
             
-            let sortedHoldings = account.holdings.sorted {
-                if $0.currentValue == $1.currentValue {
-                    return $0.symbol < $1.symbol
-                }
-                return $0.currentValue > $1.currentValue
-            }
-            
-            // Map directly to RowData
-            return sortedHoldings.map { h in
+            data = account.holdings.map { h in
                 HoldingRowData(
                     id: String(describing: h.id),
                     symbol: h.symbol,
                     quantity: h.quantity,
                     currentValue: h.currentValue,
+                    totalCost: h.avgCost * h.quantity,
                     dayChangePercent: h.dayChangePercent,
-                    accountName: nil, // We are inside a specific account tab, usually redundant to show name, but can add `account.name` if desired. User requested "not show" for total list.
+                    accountName: nil,
                     representativeHolding: h
                 )
+            }
+        }
+        
+        // 4. Apply Sort
+        return data.sorted { a, b in
+            let isAsc = sortAscending
+            switch sortOption {
+            case .value:
+                return isAsc ? a.currentValue < b.currentValue : a.currentValue > b.currentValue
+            case .totalReturn:
+                return isAsc ? a.totalReturn < b.totalReturn : a.totalReturn > b.totalReturn
+            case .totalPercent:
+                return isAsc ? a.totalReturnPercent < b.totalReturnPercent : a.totalReturnPercent > b.totalReturnPercent
+            case .dayPercent:
+                let pA = a.dayChangePercent ?? -999
+                let pB = b.dayChangePercent ?? -999
+                return isAsc ? pA < pB : pA > pB
             }
         }
     }
@@ -127,133 +149,188 @@ struct PortfolioSummaryView: View {
                 title: "Portfolio",
                 token: token
             )
-
-            ScrollView {
-                if accounts.isEmpty {
-                    VStack(spacing: 12) {
-                        Text("No accounts yet").foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 100)
-                } else {
-                    VStack(spacing: 12) {
-                        ScrollViewReader { proxy in
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 16) {
-                                    tabButton(title: "Total", index: 0)
-                                        .id(0)
-                                    
-                                    ForEach(Array(accounts.enumerated()), id: \.offset) { offset, account in
-                                        let index = offset + 1
-                                        tabButton(title: account.name, index: index)
-                                            .id(index)
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                            .onChange(of: selectedIndex) { newValue in
-                                withAnimation(.easeInOut) {
-                                    proxy.scrollTo(newValue, anchor: .center)
-                                }
-                            }
-                            .onAppear {
-                                proxy.scrollTo(selectedIndex, anchor: .center)
-                            }
-                        }
-                    }
-                    
-                    TabView(selection: $selectedIndex) {
-                        totalCard
-                            .padding(.horizontal)
-                            .tag(0)
-                        
-                        ForEach(Array(accounts.enumerated()), id: \.offset) { offset, account in
-                            let index = offset + 1
-                            accountCard(account: account, isSelected: selectedIndex == index)
-                                .padding(.horizontal)
-                                .tag(index)
-                        }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(height: 270)
-                    
-                    timeframePicker
+            
+            if accounts.isEmpty {
+                VStack(spacing: 12) {
+                    Text("No accounts yet").foregroundStyle(.secondary)
                 }
-                
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack {
-                            Text("Holdings")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            Spacer()
-                            
-                            Button {
-                                // TODO: show filter sheet or sort options
-                            } label: {
-                                Image(systemName: "slider.horizontal.3")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 100)
+            } else {
+                VStack(spacing: 12) {
+                    ScrollViewReader { proxy in
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 16) {
+                                tabButton(title: "Total", index: 0)
+                                    .id(0)
+                                
+                                ForEach(Array(accounts.enumerated()), id: \.offset) { offset, account in
+                                    let index = offset + 1
+                                    tabButton(title: account.name, index: index)
+                                        .id(index)
+                                }
                             }
-                            .padding(.trailing)
+                            .padding(.horizontal)
                         }
-                        .padding()
+                        .onChange(of: selectedIndex) { newValue in
+                            withAnimation(.easeInOut) {
+                                proxy.scrollTo(newValue, anchor: .center)
+                            }
+                        }
+                        .onAppear {
+                            proxy.scrollTo(selectedIndex, anchor: .center)
+                        }
+                    }
+                }
+                .padding(.bottom)
+                
+                ScrollView {
+                    VStack(spacing: 12) {
+                        TabView(selection: $selectedIndex) {
+                            totalCard
+                                .padding(.horizontal)
+                                .tag(0)
+                            
+                            ForEach(Array(accounts.enumerated()), id: \.offset) { offset, account in
+                                let index = offset + 1
+                                accountCard(account: account, isSelected: selectedIndex == index)
+                                    .padding(.horizontal)
+                                    .tag(index)
+                            }
+                        }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        .frame(height: 270)
                         
-                        // Loop over our new HoldingRowData
-                        ForEach(Array(holdingsToShow.enumerated()), id: \.element.id) { index, h in
-                            NavigationLink(destination: PositionDetailView(holding: h.representativeHolding)) {
+                        timeframePicker
+                        VStack(alignment: .leading, spacing: 24) {
+                            VStack(alignment: .leading, spacing: 2) {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 0) {
-                                        Text(h.symbol).font(.headline)
-                                        Text("\(h.quantity, specifier: "%.2f") shares")
-                                            .font(.subheadline).foregroundColor(.secondary)
-                                        
-                                        // Only show account name if it exists (it is nil in Total view)
-                                        if let acctName = h.accountName {
-                                            Text(acctName)
-                                                .font(.caption).foregroundColor(.secondary)
-                                        }
-                                    }
+                                    Text("Holdings")
+                                        .font(.headline)
+                                        .padding(.horizontal)
+                                    
                                     Spacer()
-                                    VStack(alignment: .trailing, spacing: 4) {
-                                        let currency = selectedIsTotal
-                                        ? totalCurrency
-                                        : (selectedAccount?.currency ?? "USD")
-                                        
-                                        Text(h.currentValue, format: .currency(code: currency))
-                                            .fontWeight(.semibold)
-                                        
-                                        if let pct = h.dayChangePercent {
-                                            Text(String(format: "%+.2f%%", pct))
-                                                .font(.subheadline).fontWeight(.semibold)
-                                                .foregroundColor(pct >= 0 ? .green : .red)
-                                        } else {
-                                            Text("—").font(.subheadline).fontWeight(.semibold).foregroundColor(.secondary)
+                                    
+                                    // Filter/Sort Menu
+                                    Menu {
+                                        Section("Sort By") {
+                                            ForEach(SortOption.allCases) { option in
+                                                Button {
+                                                    withAnimation { sortOption = option }
+                                                } label: {
+                                                    // Fix: Only use Label if we have a checkmark, otherwise use Text
+                                                    if sortOption == option {
+                                                        Label(option.rawValue, systemImage: "checkmark")
+                                                    } else {
+                                                        Text(option.rawValue)
+                                                    }
+                                                }
+                                            }
                                         }
+                                        
+                                        Section("Order") {
+                                            Button {
+                                                withAnimation { sortAscending = false }
+                                            } label: {
+                                                if !sortAscending {
+                                                    Label("Highest First", systemImage: "checkmark")
+                                                } else {
+                                                    Text("Highest First")
+                                                }
+                                            }
+                                            Button {
+                                                withAnimation { sortAscending = true }
+                                            } label: {
+                                                if sortAscending {
+                                                    Label("Lowest First", systemImage: "checkmark")
+                                                } else {
+                                                    Text("Lowest First")
+                                                }
+                                            }
+                                        }
+                                    } label: {
+                                        Image(systemName: "slider.horizontal.3")
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundColor(.primary)
                                     }
+                                    .padding(.trailing)
                                 }
                                 .padding()
-                                .background(Color(UIColor.systemBackground))
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                
+                                // Loop over our new HoldingRowData
+                                ForEach(Array(holdingsToShow.enumerated()), id: \.element.id) { index, h in
+                                    NavigationLink(destination: PositionDetailView(holding: h.representativeHolding)) {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 0) {
+                                                Text(h.symbol).font(.headline)
+                                                Text("\(h.quantity, specifier: "%.2f") shares")
+                                                    .font(.subheadline).foregroundColor(.secondary)
+                                                
+                                                // Only show account name if it exists (it is nil in Total view)
+                                                if let acctName = h.accountName {
+                                                    Text(acctName)
+                                                        .font(.caption).foregroundColor(.secondary)
+                                                }
+                                            }
+                                            Spacer()
+                                            VStack(alignment: .trailing, spacing: 4) {
+                                                let currency = selectedIsTotal
+                                                ? totalCurrency
+                                                : (selectedAccount?.currency ?? "USD")
+                                                
+                                                Text(h.currentValue, format: .currency(code: currency))
+                                                    .fontWeight(.semibold)
+                                                
+                                                // Display the metric relevant to the sort, or default to Day Change %
+                                                Group {
+                                                    switch sortOption {
+                                                    case .totalReturn:
+                                                        Text(h.totalReturn, format: .currency(code: currency).sign(strategy: .always()))
+                                                    case .totalPercent:
+                                                        Text(String(format: "%+.2f%%", h.totalReturnPercent * 100))
+                                                    default:
+                                                        if let pct = h.dayChangePercent {
+                                                            Text(String(format: "%+.2f%%", pct))
+                                                        } else {
+                                                            Text("—")
+                                                        }
+                                                    }
+                                                }
+                                                .font(.subheadline).fontWeight(.semibold)
+                                                .foregroundColor({
+                                                    switch sortOption {
+                                                    case .totalReturn, .totalPercent:
+                                                        return h.totalReturn >= 0 ? .green : .red
+                                                    default:
+                                                        return (h.dayChangePercent ?? 0) >= 0 ? .green : .red
+                                                    }
+                                                }())
+                                            }
+                                        }
+                                        .padding()
+                                        .background(Color(UIColor.systemBackground))
+                                        .cornerRadius(12)
+                                        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(.horizontal)
+                                    
+                                    // Add separator line between items, but not after the last one
+                                    if index < holdingsToShow.count - 1 {
+                                        Divider()
+                                            .padding(.horizontal, 32)
+                                    }
+                                }
                             }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal) // Moved padding here for better list alignment
-                            
-                            // Add separator line between items, but not after the last one
-                            if index < holdingsToShow.count - 1 {
-                                Divider()
-                                    .padding(.horizontal, 32) // Indented slightly more than the cards
-                            }
+                        }
+                        .padding(.vertical)
+                        .sheet(isPresented: $showingConnectBrokerage) {
+                            ConnectBrokerageView(token: token)
                         }
                     }
                 }
-                .padding(.vertical)
-                .sheet(isPresented: $showingConnectBrokerage) {
-                    ConnectBrokerageView(token: token)
-                }
             }
+            
         }
         .onAppear {
             if selectedIndex >= accounts.count + 1 { selectedIndex = 0 }
@@ -311,7 +388,7 @@ struct PortfolioSummaryView: View {
                         .background(
                             Capsule()
                                 .fill(selectedTimeframe == tf
-                                      ? Color.secondary.opacity(0.3) // Adjusted for visibility
+                                      ? Color.secondary.opacity(0.3)
                                       : Color.clear)
                         )
                         .foregroundColor(selectedTimeframe == tf ? .primary : .secondary)

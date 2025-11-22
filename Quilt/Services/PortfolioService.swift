@@ -129,6 +129,7 @@ enum PortfolioService {
             let fresh = Holding(
                 remoteID: dto.id,
                 symbol: dto.symbol,
+                symbolDescription: dto.symbolDescription,
                 quantity: dto.quantity,
                 avgCost: dto.avgCost,
                 updatedAt: asOf,

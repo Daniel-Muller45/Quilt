@@ -1,13 +1,13 @@
 import SwiftUI
 import SwiftData
 
-struct AnalysisView: View {
+struct NewsView: View {
     let token: String
 
     var body: some View {
         VStack(spacing: 0) {
             CustomHeader(
-                title: "Analysis",
+                title: "News",
                 token: token
             )
         }

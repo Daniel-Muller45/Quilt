@@ -18,6 +18,7 @@ struct HoldingDTO: Decodable {
     let id: String
     let accountId: String
     let symbol: String
+    let symbolDescription: String
     let quantity: Double
     let avgCost: Double
 }

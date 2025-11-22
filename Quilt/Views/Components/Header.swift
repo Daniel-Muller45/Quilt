@@ -39,7 +39,7 @@ struct CustomHeader: View {
                     .foregroundColor(.primary)
             }
         }
-        .padding()
+        .padding([.leading, .trailing, .bottom])
         .background(Color(UIColor.systemBackground))
         // 1. Handle the Brokerage Sheet internally
         .sheet(isPresented: $showBrokerageSheet) {
@@ -47,9 +47,9 @@ struct CustomHeader: View {
         }
         // 2. Handle the Profile Sheet internally (Placeholder)
         .sheet(isPresented: $showProfileSheet) {
-            Text("Profile Settings")
-                .presentationDetents([.medium])
+            ProfileView()
         }
+
     }
 }
 

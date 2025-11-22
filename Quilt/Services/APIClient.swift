@@ -6,8 +6,6 @@ final class APIClient {
 
     var baseURL: URL = URL(string: "http://localhost:8000")!
 
-    // MARK: - Public
-
     func getPortfolio(token: String) async throws -> PortfolioResponse {
         var request = URLRequest(url: baseURL.appendingPathComponent("/portfolio"))
         request.httpMethod = "GET"
@@ -16,8 +14,6 @@ final class APIClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         try assertOK(response, data: data, endpoint: "/portfolio")
-        print("response \(response)")
-        print("data \(data)")
         return try decodeWithLogging(PortfolioResponse.self, data: data, endpoint: "/portfolio")
     }
 
@@ -77,8 +73,6 @@ final class APIClient {
         )
     }
 
-    // MARK: - Helpers
-
     private func assertOK(_ response: URLResponse, data: Data, endpoint: String) throws {
         guard let http = response as? HTTPURLResponse else {
             logRaw("(\(endpoint)) Non-HTTP response")
@@ -91,7 +85,7 @@ final class APIClient {
     }
 
     private func decodeWithLogging<T: Decodable>(_ type: T.Type, data: Data, endpoint: String) throws -> T {
-        let decoder = JSONDecoder.iso8601Flexible() // <-- already handles fractional seconds
+        let decoder = JSONDecoder.iso8601Flexible()
         do {
             return try decoder.decode(T.self, from: data)
         } catch let DecodingError.dataCorrupted(ctx) {
@@ -110,12 +104,10 @@ final class APIClient {
     }
 
     private func logRaw(_ msg: String) {
-        // Minimal logger; swap for os.Logger if you prefer
-        print("❌ APIClient:", msg)
+        print("APIClient:", msg)
     }
 }
 
-// Flexible ISO8601 decoder (no need to override dateDecodingStrategy again)
 extension JSONDecoder {
     static func iso8601Flexible() -> JSONDecoder {
         let dec = JSONDecoder()
