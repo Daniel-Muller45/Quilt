@@ -23,12 +23,6 @@ struct PositionDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // existing header + summary...
-//                VStack(alignment: .leading, spacing: 4) {
-//                    Text(holding.symbol).font(.largeTitle).fontWeight(.bold)
-//                    Text(String(format: "%.2f shares", holding.quantity))
-//                        .font(.title3).foregroundColor(.secondary)
-//                }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(holding.symbol)
