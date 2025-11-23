@@ -25,6 +25,11 @@ struct MainTabView: View {
                     Label("News", systemImage: "newspaper.fill")
                 }
                 .tag(2)
+            OnboardingView()
+                .tabItem {
+                    Label("Onb", systemImage: "newspaper.fill")
+                }
+                .tag(3)
         }
         .accentColor(.white)
     }

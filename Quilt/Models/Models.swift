@@ -207,3 +207,89 @@ struct PortfolioSnapshot: Identifiable, Decodable {
         self.totalValue = try container.decode(Double.self, forKey: .totalValue)
     }
 }
+
+struct StockSnapshot: Identifiable, Decodable {
+    let id = UUID()
+    let date: Date
+    let ticker: String
+    let close: Double
+    
+    enum CodingKeys: String, CodingKey {
+        case date
+        case ticker
+        case close
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Decode date as String from Supabase, then parse "yyyy-MM-dd"
+        let dateString = try container.decode(String.self, forKey: .date)
+        
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let parsedDate = formatter.date(from: dateString) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .date,
+                in: container,
+                debugDescription: "Invalid date format: \(dateString)"
+            )
+        }
+        
+        self.date = parsedDate
+        self.ticker = try container.decode(String.self, forKey: .ticker)
+        self.close = try container.decode(Double.self, forKey: .close)
+    }
+}
+
+struct StockTransaction: Identifiable, Decodable {
+    let id = UUID()
+    let date: Date
+    let ticker: String
+    let transactionType: String
+    let quantity: Double
+    let fee: Double
+    let price: Double
+    let cashDelta: Double
+    
+    enum CodingKeys: String, CodingKey {
+        case date = "trade_date"
+        case ticker
+        case transactionType = "type"
+        case quantity
+        case fee
+        case price
+        case cashDelta = "cash_delta"
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Decode date as String from Supabase, then parse "yyyy-MM-dd"
+        let dateString = try container.decode(String.self, forKey: .date)
+        
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let parsedDate = formatter.date(from: dateString) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .date,
+                in: container,
+                debugDescription: "Invalid date format: \(dateString)"
+            )
+        }
+        
+        self.date = parsedDate
+        self.ticker = try container.decode(String.self, forKey: .ticker)
+        self.transactionType = try container.decode(String.self, forKey: .transactionType)
+        self.quantity = try container.decode(Double.self, forKey: .quantity)
+        self.fee = try container.decode(Double.self, forKey: .fee)
+        self.price = try container.decode(Double.self, forKey: .price)
+        self.cashDelta = try container.decode(Double.self, forKey: .cashDelta)
+    }
+}

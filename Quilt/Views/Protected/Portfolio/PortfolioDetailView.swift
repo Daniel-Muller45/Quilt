@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
-
+// SupabaseService is assumed to be defined elsewhere and available
+// Holding struct, OneYearChartViewModel, StockHistoryChartView, HistoryTimeframe, etc. are assumed to be defined and available
 
 enum Timeframe: String, CaseIterable, Identifiable {
     case d1 = "1D"
@@ -16,52 +17,27 @@ enum Timeframe: String, CaseIterable, Identifiable {
 struct PositionDetailView: View {
     let holding: Holding
 
-    @State private var selectedTF: Timeframe = .y1
     @State private var selectedTab: Int = 0
-    @StateObject private var vm = OneYearChartViewModel()
+    // @StateObject private var vm = OneYearChartViewModel() // Removed: Assuming chart VM is handled elsewhere
+    @StateObject private var transactionVM = TransactionViewModel() // NEW: Transaction view model
+    @State private var timeframe: HistoryTimeframe = .d1 // Assuming HistoryTimeframe is defined elsewhere
+    @State private var selectedTimeframe: Timeframe = .d1
+    private let timeframes = Timeframe.allCases
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(holding.symbol)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
                         Text(holding.symbolDescription)
-                            .foregroundStyle(.secondary)
-                            .font(.subheadline)
+                            .font(.system(size: 28, weight: .bold))
                     }
-
-                    HStack(spacing: 8) {
-                        if let price = holding.marketPrice {
-                            Text(price, format: .currency(code: "USD"))
-                                .font(.title3.weight(.semibold))
-                        }
-                        if let pct = holding.dayChangePercent {
-                            Text(String(format: "%+.2f%%", pct))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(pct >= 0 ? .green : .red)
-                        }
-                    }
-                    .onAppear { vm.load(ticker: holding.symbol) }
+                    
+                    // Assuming StockHistoryChartView is defined
+                    StockHistoryChartView(selectedTimeframe: $selectedTimeframe, ticker: holding.symbol)
+                    timeFramePicker
                 }
 
-                Divider()
-                
-                TimeframePills(selected: $selectedTF)
-
-//                VStack(alignment: .leading, spacing: 8) {
-//                    Text(holding.currentValue, format: .currency(code: "USD")).font(.headline)
-//                    if let pct = holding.dayChangePercent {
-//                        Text(String(format: "%+.2f%%", pct))
-//                            .font(.subheadline).fontWeight(.semibold)
-//                            .foregroundColor(pct >= 0 ? .green : .red)
-//                    }
-//                }
-
-                // NEW: 1Y chart
-                OneYearPriceChart(symbol: holding.symbol)
-                
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Position")
                         .font(.headline)
@@ -80,16 +56,10 @@ struct PositionDetailView: View {
                             let pctReturn = ((marketPrice - holding.avgCost) / holding.avgCost) * 100
                             Metric(label: "Total Return",
                                    value: HStack(spacing: 4) {
-                                       Text(String(format: "%+.2f%%", pctReturn))
-                                           .foregroundStyle(pctReturn >= 0 ? .green : .red)
-                                   })
+                                        Text(String(format: "%+.2f%%", pctReturn))
+                                            .foregroundStyle(pctReturn >= 0 ? .green : .red)
+                                })
                         }
-
-//                        Metric(label: "Total Return",
-//                               value: HStack(spacing: 4) {
-//                                   Text(String(format: "%+.2f%%", holding.totalReturnPercent))
-//                                       .foregroundStyle(holding.totalReturnPercent >= 0 ? .green : .red)
-//                               })
                     }
                 }
                 .padding(.top, 8)
@@ -97,18 +67,144 @@ struct PositionDetailView: View {
                 SegmentedButtons(titles: ["Overview", "Transactions"], selectedIndex: $selectedTab)
                     .padding(.top, 8)
                 
+                // NEW: Content based on selected tab
+                Group {
+                    if selectedTab == 0 {
+                        // Overview content placeholder
+                        // You can add stock fundamentals, news, etc. here later
+                        Color.clear.frame(height: 1)
+                    } else if selectedTab == 1 {
+                        TransactionListView(ticker: holding.symbol, transactionVM: transactionVM)
+                            // Load data only when the Transactions tab is selected
+                            .onAppear {
+                                Task {
+                                    await transactionVM.load(ticker: holding.symbol)
+                                }
+                            }
+                    }
+                }
+                .padding(.top, 16)
+
             }
             .padding()
             .navigationTitle(holding.symbol)
             .navigationBarTitleDisplayMode(.inline)
         }
     }
+    
+    private var timeFramePicker: some View {
+        HStack(spacing: 16) {
+            Spacer()
+            ForEach(timeframes) { tf in
+                Button {
+                    withAnimation(.easeInOut) {
+                        selectedTimeframe = tf
+                    }
+                } label: {
+                    Text(tf.rawValue)
+                        .font(.caption)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(
+                            Capsule()
+                                .fill(selectedTimeframe == tf
+                                            ? Color.secondary.opacity(0.15)
+                                            : Color.clear)
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedTimeframe == tf ? Color.white.opacity(0.35) : Color.white.opacity(0.0), lineWidth: 1)
+                        )
+                        .foregroundColor(selectedTimeframe == tf ? .primary : .secondary)
+                }
+            }
+            Spacer()
+        }
+    }
+}
+
+// NEW: Transaction List View (Displayed when tab is active)
+struct TransactionListView: View {
+    let ticker: String
+    @ObservedObject var transactionVM: TransactionViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Trade History")
+                .font(.headline)
+                .padding(.bottom, 5)
+
+            if transactionVM.isLoading {
+                ProgressView("Loading transactions...")
+                    .frame(maxWidth: .infinity)
+            } else if let error = transactionVM.error {
+                Text("Failed to load transactions: \(error)")
+                    .foregroundColor(.red)
+            } else if transactionVM.transactions.isEmpty {
+                Text("No trading history found for \(ticker).")
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(transactionVM.transactions) { transaction in
+                    VStack(spacing: 0) {
+                        TransactionRow(transaction: transaction)
+                        Divider()
+                            .background(Color.secondary.opacity(0.1))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// NEW: Single Transaction Row View
+struct TransactionRow: View {
+    let transaction: StockTransaction
+    
+    // Date formatter for display
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
+    }
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                // Type and Quantity
+                Text("\(transaction.transactionType) \(String(format: "%.2f", transaction.quantity)) Shares")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    // Color based on type
+                    .foregroundColor(transaction.transactionType.uppercased() == "BUY" ? .green : .red)
+                
+                // Date
+                Text(dateFormatter.string(from: transaction.date))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                // Total Cash Delta (e.g., total cost/proceeds)
+                Text(transaction.cashDelta, format: .currency(code: "USD"))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                
+                // Price per share
+                Text(String(format: "@ $%.2f", transaction.price))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 8)
+    }
 }
 
 
 struct OneYearPriceChart: View {
     let symbol: String
-    @StateObject private var vm = OneYearChartViewModel()
+    @StateObject private var vm = OneYearChartViewModel() // Assuming this is defined
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -120,9 +216,9 @@ struct OneYearPriceChart: View {
                 Text("No data")
             } else {
                 Chart(vm.points) { p in
-                    if let pct = vm.pctReturn1Y {
+                    if let pct = vm.pctReturn1Y { // Assuming pctReturn1Y is defined
                         LineMark(
-                            x: .value("Date", p.dateValue),
+                            x: .value("Date", p.dateValue), // Assuming dateValue is defined
                             y: .value("Close", p.close)
                         )
                         .interpolationMethod(.catmullRom)
@@ -135,16 +231,15 @@ struct OneYearPriceChart: View {
                         .opacity(0.15)
                     }
                 }
-                .chartYAxis(.hidden)           // ⛔ Hide Y axis and gridlines
-                .chartXAxis(.hidden)           // ⛔ Hide X axis and gridlines
-                .chartPlotStyle { plot in      // ⛔ Transparent plot background
+                .chartYAxis(.hidden)      // ⛔ Hide Y axis and gridlines
+                .chartXAxis(.hidden)      // ⛔ Hide X axis and gridlines
+                .chartPlotStyle { plot in // ⛔ Transparent plot background
                     plot.background(.clear)
                 }
                 .chartYScale(domain: .automatic(includesZero: false))
                 .frame(height: 240)
             }
         }
-        .onAppear { vm.load(ticker: symbol) }
     }
 }
 
@@ -163,7 +258,7 @@ struct TimeframePills: View {
                         .padding(.vertical, 6)
                         .background(
                             Capsule()
-                                .fill(selected == tf ? Color.white.opacity(0.12) : Color.white.opacity(0.06))
+                                .fill(selected == tf ? Color.white.opacity(0.15) : Color.white.opacity(0.06))
                         )
                         .overlay(
                             Capsule()
@@ -214,11 +309,11 @@ struct SegmentedButtons: View {
                         .frame(maxWidth: .infinity)
                         .background(
                             Capsule()
-                                .fill(i == selectedIndex ? Color.white.opacity(0.15) : Color.white.opacity(0.06))
+                                .fill(i == selectedIndex ? Color.white.opacity(0.15) : Color.white.opacity(0.0))
                         )
                         .overlay(
                             Capsule()
-                                .stroke(i == selectedIndex ? Color.white.opacity(0.35) : Color.white.opacity(0.12), lineWidth: 1)
+                                .stroke(i == selectedIndex ? Color.white.opacity(0.35) : Color.white.opacity(0.0), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)

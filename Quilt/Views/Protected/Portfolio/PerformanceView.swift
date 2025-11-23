@@ -103,7 +103,7 @@ struct PortfolioHistoryChartView: View {
                         
                         // Conditionally show percentage change
                         if let percent = metrics.percent {
-                            Text(String(format: "%@%.2f%%", isUp ? "+" : "", percent * 100))
+                            Text(String(format: "(%@%.2f%%)", isUp ? "+" : "", percent * 100))
                                 .foregroundStyle(perfColor)
                         } else {
                             // Display a dash or "N/A" if the percentage cannot be calculated (Start Value was 0)
@@ -133,6 +133,13 @@ struct PortfolioHistoryChartView: View {
                 }
                 
                 Chart(snaps) { snapshot in
+                    if let first = snaps.first {
+                            RuleMark(
+                                y: .value("Start Value", first.totalValue)
+                            )
+                            .foregroundStyle(Color.gray.opacity(0.4))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3]))
+                        }
                     
                     LineMark(
                         x: .value("Date", snapshot.date),
@@ -145,7 +152,7 @@ struct PortfolioHistoryChartView: View {
                         x: .value("Date", snapshot.date),
                         y: .value("Total Value", snapshot.totalValue)
                     )
-                    .foregroundStyle(chartColor.opacity(0.25))
+                    .foregroundStyle(chartColor.opacity(0.0))
                     .interpolationMethod(.monotone)
                     
                     if let selectedSnapshot, selectedSnapshot.date == snapshot.date {

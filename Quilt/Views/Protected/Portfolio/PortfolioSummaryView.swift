@@ -8,7 +8,6 @@ struct PortfolioSummaryView: View {
     @State private var selectedTimeframe: Timeframe = .d1
     private let timeframes = Timeframe.allCases
     
-    // Sorting State
     @State private var sortOption: SortOption = .value
     @State private var sortAscending: Bool = false
     
@@ -23,20 +22,15 @@ struct PortfolioSummaryView: View {
     
     let token: String
 
-    // MARK: - Helper Struct for Display
-    /// Normalizes data between a raw Holding and an Aggregated Holding for the list
     struct HoldingRowData: Identifiable {
         let id: String
         let symbol: String
         let quantity: Double
         let currentValue: Double
-        let totalCost: Double // Calculated as avgCost * quantity
+        let totalCost: Double
         let dayChangePercent: Double?
         let accountName: String?
-        // We keep a reference to one of the underlying holdings to satisfy the PositionDetailView requirement.
         let representativeHolding: Holding
-        
-        // Computed helpers for sorting
         var totalReturn: Double { currentValue - totalCost }
         var totalReturnPercent: Double { totalCost != 0 ? (currentValue - totalCost) / totalCost : 0 }
     }
@@ -66,26 +60,18 @@ struct PortfolioSummaryView: View {
         return accounts[selectedIndex - 1]
     }
     
-    // MARK: - Aggregation Logic
     private var holdingsToShow: [HoldingRowData] {
         var data: [HoldingRowData] = []
         
         if selectedIsTotal {
-            // 1. Get all holdings from all accounts
             let allHoldings = accounts.flatMap { $0.holdings }
             
-            // 2. Group by symbol
             let grouped = Dictionary(grouping: allHoldings) { $0.symbol }
             
-            // 3. Aggregate
             data = grouped.map { symbol, holdings -> HoldingRowData in
                 let totalQty = holdings.reduce(0) { $0 + $1.quantity }
                 let totalVal = holdings.reduce(0) { $0 + $1.currentValue }
-                
-                // Calculate Total Cost using avgCost * quantity
                 let totalCost = holdings.reduce(0) { $0 + ($1.avgCost * $1.quantity) }
-                
-                // Calculate weighted average for day change %
                 var weightedSum = 0.0
                 if totalVal > 0 {
                     weightedSum = holdings.reduce(0.0) { sum, h in
@@ -108,7 +94,6 @@ struct PortfolioSummaryView: View {
                 )
             }
         } else {
-            // Single Account Mode
             guard let account = selectedAccount else { return [] }
             
             data = account.holdings.map { h in
@@ -125,7 +110,6 @@ struct PortfolioSummaryView: View {
             }
         }
         
-        // 4. Apply Sort
         return data.sorted { a, b in
             let isAsc = sortAscending
             switch sortOption {
@@ -211,14 +195,12 @@ struct PortfolioSummaryView: View {
                                     
                                     Spacer()
                                     
-                                    // Filter/Sort Menu
                                     Menu {
                                         Section("Sort By") {
                                             ForEach(SortOption.allCases) { option in
                                                 Button {
                                                     withAnimation { sortOption = option }
                                                 } label: {
-                                                    // Fix: Only use Label if we have a checkmark, otherwise use Text
                                                     if sortOption == option {
                                                         Label(option.rawValue, systemImage: "checkmark")
                                                     } else {
@@ -257,7 +239,6 @@ struct PortfolioSummaryView: View {
                                 }
                                 .padding()
                                 
-                                // Loop over our new HoldingRowData
                                 ForEach(Array(holdingsToShow.enumerated()), id: \.element.id) { index, h in
                                     NavigationLink(destination: PositionDetailView(holding: h.representativeHolding)) {
                                         HStack {
@@ -266,7 +247,6 @@ struct PortfolioSummaryView: View {
                                                 Text("\(h.quantity, specifier: "%.2f") shares")
                                                     .font(.subheadline).foregroundColor(.secondary)
                                                 
-                                                // Only show account name if it exists (it is nil in Total view)
                                                 if let acctName = h.accountName {
                                                     Text(acctName)
                                                         .font(.caption).foregroundColor(.secondary)
@@ -281,7 +261,6 @@ struct PortfolioSummaryView: View {
                                                 Text(h.currentValue, format: .currency(code: currency))
                                                     .fontWeight(.semibold)
                                                 
-                                                // Display the metric relevant to the sort, or default to Day Change %
                                                 Group {
                                                     switch sortOption {
                                                     case .totalReturn:
@@ -315,7 +294,6 @@ struct PortfolioSummaryView: View {
                                     .buttonStyle(.plain)
                                     .padding(.horizontal)
                                     
-                                    // Add separator line between items, but not after the last one
                                     if index < holdingsToShow.count - 1 {
                                         Divider()
                                             .padding(.horizontal, 32)
