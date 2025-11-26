@@ -9,6 +9,8 @@ struct PortfolioHistoryChartView: View {
     @State private var selectedSnapshot: PortfolioSnapshot?
     @State private var isHovering = false
     
+    let liveCurrentValue: Double
+    
     private var filteredSnapshots: [PortfolioSnapshot] {
         guard !vm.snapshots.isEmpty else { return [] }
         
@@ -27,7 +29,15 @@ struct PortfolioHistoryChartView: View {
         }
         
         guard let cutoffDate = cutoff else { return all }
-        return all.filter { $0.date >= cutoffDate }
+        var filteredAll = all.filter { $0.date >= cutoffDate }
+        
+        let liveSnapshot = PortfolioSnapshot(
+            date: Date(),
+            totalValue: liveCurrentValue
+        )
+        filteredAll = filteredAll + [liveSnapshot]
+        
+        return filteredAll
     }
     
     // Updated Logic: Returns (change, optional percent)

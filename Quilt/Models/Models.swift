@@ -178,6 +178,11 @@ struct PortfolioSnapshot: Identifiable, Decodable {
     let id = UUID()
     let date: Date
     let totalValue: Double
+    
+    init(date: Date, totalValue: Double) {
+            self.date = date
+            self.totalValue = totalValue
+        }
 
     enum CodingKeys: String, CodingKey {
         case date

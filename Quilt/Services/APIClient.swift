@@ -4,7 +4,7 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
-    var baseURL: URL = URL(string: "https://3f2abb6a1fc1.ngrok-free.app")!
+    var baseURL: URL = URL(string: "https://api.thedigitaldesk.ai")!
 
     func getPortfolio(token: String) async throws -> PortfolioResponse {
         var request = URLRequest(url: baseURL.appendingPathComponent("/portfolio"))

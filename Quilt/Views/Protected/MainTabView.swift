@@ -20,16 +20,27 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            NewsScreen(token: authViewModel.session?.accessToken ?? "")
+//            NewsScreen(token: authViewModel.session?.accessToken ?? "")
+//                .tabItem {
+//                    Label("News", systemImage: "newspaper.fill")
+//                }
+//                .tag(2)
+            PortfolioAnalysisView()
                 .tabItem {
                     Label("News", systemImage: "newspaper.fill")
                 }
                 .tag(2)
-            OnboardingView()
-                .tabItem {
-                    Label("Onb", systemImage: "newspaper.fill")
-                }
-                .tag(3)
+//            OnboardingView()
+//                .tabItem {
+//                    Label("Onb", systemImage: "newspaper.fill")
+//                }
+//                .tag(3)
+//            
+//            PortfolioAnalysisView()
+//                .tabItem {
+//                    Label("Onb", systemImage: "newspaper.fill")
+//                }
+//                .tag(4)
         }
         .accentColor(.white)
     }

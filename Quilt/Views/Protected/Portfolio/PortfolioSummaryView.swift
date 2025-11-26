@@ -338,14 +338,14 @@ struct PortfolioSummaryView: View {
 
     private var totalCard: some View {
         return VStack(alignment: .leading, spacing: 12) {
-            PortfolioHistoryChartView(selectedTimeframe: $selectedTimeframe)
+            PortfolioHistoryChartView(selectedTimeframe: $selectedTimeframe, liveCurrentValue: totalCurrentValue)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func accountCard(account: Account, isSelected: Bool) -> some View {
         return VStack(alignment: .leading, spacing: 12) {
-            PortfolioHistoryChartView(selectedTimeframe: $selectedTimeframe)
+            PortfolioHistoryChartView(selectedTimeframe: $selectedTimeframe, liveCurrentValue: account.currentValue)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
