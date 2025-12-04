@@ -1,8 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct ConnectBrokerageView: View {
-    @Environment(\.dismiss) var dismiss
+struct OnboardingConnectView: View {
     @Environment(\.modelContext) private var modelContext
 
     @StateObject private var vm = ConnectBrokerageViewModel()
@@ -52,11 +51,9 @@ struct ConnectBrokerageView: View {
 
     var body: some View {
         NavigationStack {
+//            Text("Get Started by Connecting a Brokerage")
             VStack(alignment: .leading, spacing: 0) {
-                Text("Connect")
-                    .font(.title2).bold()
-                    .padding(.top, 24)
-                    .padding(.horizontal)
+                
 
                 ScrollView {
                     VStack(spacing: 0) {
@@ -107,11 +104,6 @@ struct ConnectBrokerageView: View {
 
                 Spacer()
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") { dismiss() }
-                }
-            }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search brokerages")
             .task {
                 vm.bind(modelContext: modelContext)
@@ -139,7 +131,7 @@ struct ConnectBrokerageView: View {
             .overlay {
                 if vm.isLinking {
                     ZStack {
-                        Color.black.opacity(0.2).ignoresSafeArea()
+//                        Color.black.opacity(0.2).ignoresSafeArea()
                         ProgressView("Preparing redirect…")
                             .padding()
                             .background(.thinMaterial)
